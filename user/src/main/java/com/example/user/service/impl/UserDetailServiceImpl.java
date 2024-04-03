@@ -2,6 +2,7 @@ package com.example.user.service.impl;
 
 import com.example.user.entity.User;
 import com.example.user.repository.UserRepository;
+import com.example.user.request.LoginRequest;
 import com.example.user.service.UserService;
 import com.example.user.specification.UserSpecification;
 import io.jsonwebtoken.Claims;
@@ -38,7 +39,7 @@ public class UserDetailServiceImpl implements UserService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findOne(userSpecification.getByName(username)).orElse(null);
+        User user = userRepository.findOne(userSpecification.getByName(LoginRequest.builder().username(username).build())).orElse(null);
         if (user == null) {
             throw new UsernameNotFoundException("User not exists");
         }

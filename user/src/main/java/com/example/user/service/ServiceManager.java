@@ -2,24 +2,31 @@ package com.example.user.service;
 
 import com.example.user.annotation.RequestType;
 import com.example.user.annotation.RequestTypeEnum;
+import com.example.user.repository.BaseRepository;
 import com.example.user.request.BaseRequest;
 import com.example.user.response.BaseResponse;
 import com.example.user.response.SuccessResponse;
 import com.example.user.specification.BaseSpecification;
 import com.example.user.valid.BaseValid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationContextException;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.Optional;
+
 @Component
 @RequiredArgsConstructor
-public class ServiceManager {
+public class ServiceManager<T> {
     private BaseRequest baseRequest;
-    private JpaRepository jpaRepository;
-    private BaseSpecification specification;
+    private BaseRepository jpaRepository;
+    private Specification specification;
     private ServiceHandler serviceHandler;
     private BaseValid baseValid;
 
@@ -28,32 +35,38 @@ public class ServiceManager {
         return this;
     }
 
-    public ServiceManager setRepo(JpaRepository jpaRepository) {
+    public ServiceManager setRepo(BaseRepository jpaRepository) {
         this.jpaRepository = jpaRepository;
         return this;
     }
 
-    public ServiceManager setSpec(BaseSpecification specification) {
+    public ServiceManager setSpec(Specification specification) {
         this.specification = specification;
         return this;
     }
 
-    public <T> ServiceManager setServiceHandle(ServiceHandler<T> handler) {
+    public ServiceManager setServiceHandle(ServiceHandler<T, BaseResponse> handler) {
         this.serviceHandler = handler;
         return this;
     }
 
-    public ServiceManager setValid(BaseValid baseValid){
+    public ServiceManager setValid(BaseValid baseValid) {
         this.baseValid = baseValid;
         return this;
     }
 
-    public BaseResponse execute() {
+    public BaseResponse execute() throws Exception {
+        if (baseRequest == null) {
+            throw new Exception();
+        }
+        if (baseValid == null) {
+            throw new Exception();
+        }
+        RequestTypeEnum requestType = null;
         Class<?> clazz = baseRequest.getClass();
-
         if (clazz.isAnnotationPresent(RequestType.class)) {
             RequestType annotation = clazz.getAnnotation(RequestType.class);
-            RequestTypeEnum requestType = annotation.value();
+            requestType = annotation.value();
             switch (requestType) {
                 case GET -> {
                     baseValid.validGet(baseRequest);
@@ -70,15 +83,29 @@ public class ServiceManager {
                 case UPDATE -> {
                     baseValid.validUpdate(baseRequest);
                     break;
-                }case CHECK -> {
+                }
+                case CHECK -> {
                     baseValid.validCheck(baseRequest);
                     break;
                 }
             }
         }
-        Object result = serviceHandler.handleService();
-        this.jpaRepository.saveAndFlush(result);
-        return new SuccessResponse<>().setData(result);
+        if(requestType.equals(RequestTypeEnum.GET) || requestType.equals(RequestTypeEnum.CHECK)
+         || requestType.equals(RequestTypeEnum.GET_LIST)){
+            if(requestType.equals(RequestTypeEnum.GET_LIST)){
+                List all = jpaRepository.findAll(specification);
+            }else{
+                Optional one = jpaRepository.findOne(specification);
+            }
+        }else{
+            Object result = serviceHandler.handleService();
+            if (jpaRepository == null) {
+                throw new Exception();
+            }
+            this.jpaRepository.saveAndFlush(result);
+        }
+        T result  = (T) serviceHandler.handleService();
+        return new SuccessResponse<T>().setData(result);
     }
 
 
@@ -89,7 +116,7 @@ public class ServiceManager {
         return authentication != null && !(authentication instanceof AnonymousAuthenticationToken) && authentication.isAuthenticated();
     }
 
-    public interface ServiceHandler<T> {
+    public interface ServiceHandler<T, U extends BaseResponse> {
         T handleService();
     }
 }

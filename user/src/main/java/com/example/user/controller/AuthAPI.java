@@ -1,8 +1,8 @@
 package com.example.user.controller;
 
 import com.example.user.request.LoginRequest;
+import com.example.user.request.SignUpRequest;
 import com.example.user.service.impl.AuthServiceImpl;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -16,7 +16,15 @@ public class AuthAPI {
     private final AuthServiceImpl authService;
 
     @PostMapping(value = {"/login"},consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public ResponseEntity<?> handleLoginRequest(@ModelAttribute @Valid LoginRequest loginRequest) {
+    public ResponseEntity<?> handleLoginRequest(@ModelAttribute @Valid LoginRequest loginRequest) throws Exception {
+        return authService.login(loginRequest).build();
+    }
+    @GetMapping(value = {"/sign-up"})
+    public ResponseEntity<?> handleSignUpRequest(@RequestBody @Valid SignUpRequest loginRequest) throws Exception {
+        return authService.signup(loginRequest).build();
+    }
+    @PostMapping(value = {"/refresh"})
+    public ResponseEntity<?> handleRefreshRequest(@ModelAttribute @Valid LoginRequest loginRequest) throws Exception {
         return authService.login(loginRequest).build();
     }
 }

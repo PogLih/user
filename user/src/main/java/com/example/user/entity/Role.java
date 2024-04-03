@@ -1,5 +1,6 @@
 package com.example.user.entity;
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -7,6 +8,7 @@ import lombok.Setter;
 import java.util.Set;
 @Data
 @Entity
+@Builder
 @Table(name = "role")
 public class Role {
 

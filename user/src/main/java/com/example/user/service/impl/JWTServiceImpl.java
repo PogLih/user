@@ -1,8 +1,10 @@
 package com.example.user.service.impl;
 
+import com.example.user.entity.User;
 import com.example.user.service.JWTService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.*;
 import io.jsonwebtoken.security.SecurityException;
@@ -13,31 +15,24 @@ import javax.crypto.SecretKey;
 import java.io.InputStream;
 import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Function;
 @Service
 public class JWTServiceImpl implements JWTService {
-    private String generateToken(UserDetails userDetails) {
+    public String generateToken(UserDetails userDetails) {
         return Jwts.builder().subject(userDetails.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 24))
-                .signWith(getSignKey(), new SecureDigestAlgorithm<Key, Key>() {
-                    @Override
-                    public byte[] digest(SecureRequest<InputStream, Key> inputStreamKeySecureRequest) throws SecurityException {
-                        return new byte[0];
-                    }
-
-                    @Override
-                    public boolean verify(VerifySecureDigestRequest<Key> keyVerifySecureDigestRequest) throws SecurityException {
-                        return false;
-                    }
-
-                    @Override
-                    public String getId() {
-                        return null;
-                    }
-                }).compact();
+                .signWith(getSignKey(),SignatureAlgorithm.HS256).compact();
     }
-
+    @Override
+    public String generateRefreshToken(Map<String, Object> extraClaims, User user) {
+        return Jwts.builder().claims(extraClaims).subject(user.getUsername())
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 24 * 7))
+                .signWith(getSignKey(),  SignatureAlgorithm.HS256).compact();
+    }
     public String extractUsername(String token){
         return extractClaim(token, Claims::getSubject);
     }
@@ -47,6 +42,8 @@ public class JWTServiceImpl implements JWTService {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
+
+
 
     private boolean isTokenExpired(String token) {
         return extractClaim(token,Claims::getExpiration).before(new Date());
