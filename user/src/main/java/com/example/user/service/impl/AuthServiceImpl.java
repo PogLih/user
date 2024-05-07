@@ -43,9 +43,9 @@ public class AuthServiceImpl implements AuthService {
         LoginRequest loginRequest = (LoginRequest) request;
         User user = userRepository.findOne(userSpecification.getByName(loginRequest)).orElse(null);
         String jwt = jwtService.generateToken(user);
-        String refreshToken = jwtService.generateRefreshToken(new HashMap<>(),user);
+        String refreshToken = jwtService.generateRefreshToken(new HashMap<>(), user);
         LoginResponse loginResponse = LoginResponse.builder().jwt(jwt).refreshToken(refreshToken).build();
-        return new UsernamePasswordAuthenticationToken(user,"N/A",user.getAuthorities());
+        return new UsernamePasswordAuthenticationToken(user, "N/A", user.getAuthorities());
     }
 
     public BaseResponse login(LoginRequest loginRequest) throws Exception {
@@ -54,7 +54,10 @@ public class AuthServiceImpl implements AuthService {
                 .setRepo(userRepository)
                 .setSpec(userSpecification.getByName(loginRequest))
                 .setValid(userValid)
-                .setServiceHandle((ServiceHandler<User,LoginResponse>) () -> User.builder().username(loginRequest.getUsername()).password(loginRequest.getPassword()).build()).execute();
+                .setServiceHandle(
+                        (ServiceHandler<User, LoginResponse>) () ->
+                                User.builder().username(loginRequest.getUsername()).password(loginRequest.getPassword()).build()
+                ).execute();
     }
 
     public BaseResponse signup(SignUpRequest signUpRequest) throws Exception {

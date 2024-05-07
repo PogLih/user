@@ -2,6 +2,7 @@ package com.example.user.service;
 
 import com.example.user.annotation.RequestType;
 import com.example.user.annotation.RequestTypeEnum;
+import com.example.user.annotation.RequestValidation;
 import com.example.user.repository.BaseRepository;
 import com.example.user.request.BaseRequest;
 import com.example.user.response.BaseResponse;
@@ -28,7 +29,7 @@ public class ServiceManager<T> {
     private BaseRepository jpaRepository;
     private Specification specification;
     private ServiceHandler serviceHandler;
-    private BaseValid baseValid;
+    private BaseValid<T> baseValid;
 
     public ServiceManager setRequest(BaseRequest baseRequest) {
         this.baseRequest = baseRequest;
@@ -64,51 +65,57 @@ public class ServiceManager<T> {
         }
         RequestTypeEnum requestType = null;
         Class<?> clazz = baseRequest.getClass();
-        if (clazz.isAnnotationPresent(RequestType.class)) {
-            RequestType annotation = clazz.getAnnotation(RequestType.class);
+        if (clazz.isAnnotationPresent(RequestValidation.class)) {
+            RequestValidation annotation = clazz.getAnnotation(RequestValidation.class);
             requestType = annotation.value();
-            switch (requestType) {
-                case GET -> {
-                    baseValid.validGet(baseRequest);
-                    break;
-                }
-                case INSERT -> {
-                    baseValid.validInsert(baseRequest);
-                    break;
-                }
-                case DELETE -> {
-                    baseValid.validDelete(baseRequest);
-                    break;
-                }
-                case UPDATE -> {
-                    baseValid.validUpdate(baseRequest);
-                    break;
-                }
-                case CHECK -> {
-                    baseValid.validCheck(baseRequest);
-                    break;
-                }
-            }
+            boolean result = requestValidation(baseValid, requestType);
         }
-        if(requestType.equals(RequestTypeEnum.GET) || requestType.equals(RequestTypeEnum.CHECK)
-         || requestType.equals(RequestTypeEnum.GET_LIST)){
-            if(requestType.equals(RequestTypeEnum.GET_LIST)){
-                List all = jpaRepository.findAll(specification);
-            }else{
-                Optional one = jpaRepository.findOne(specification);
-            }
-        }else{
-            Object result = serviceHandler.handleService();
-            if (jpaRepository == null) {
-                throw new Exception();
-            }
-            this.jpaRepository.saveAndFlush(result);
-        }
+//        if(requestType.equals(RequestTypeEnum.GET) || requestType.equals(RequestTypeEnum.CHECK)
+//         || requestType.equals(RequestTypeEnum.GET_LIST)){
+//            if(requestType.equals(RequestTypeEnum.GET_LIST)){
+//                List all = jpaRepository.findAll(specification);
+//            }else{
+//                Optional one = jpaRepository.findOne(specification);
+//            }
+//        }else{
+//            Object result = serviceHandler.handleService();
+//            if (jpaRepository == null) {
+//                throw new Exception();
+//            }
+//            this.jpaRepository.saveAndFlush(result);
+//        }
         T result  = (T) serviceHandler.handleService();
         return new SuccessResponse<T>().setData(result);
     }
 
+    private boolean requestValidation(BaseValid baseValid,RequestTypeEnum type){
+        if (type != null && baseValid != null) {
+            BaseResponse errorMessage = null;
+            if (type == RequestTypeEnum.Insert) {
+                errorMessage = baseValid.validInsert(baseRequest);
+            } else if (type == RequestTypeEnum.InsertTemp) {
+                errorMessage = baseValid.insertTempValidation(baseRequest);
+            } else if (type == RequestTypeEnum.Update) {
+                errorMessage = baseValid.validUpdate(baseRequest);
+            } else if (type == RequestTypeEnum.UpdateTemp) {
+                errorMessage = baseValid.updateTempValidation(baseRequest);
+            } else if (type == RequestTypeEnum.Disable) {
+                errorMessage = baseValid.validDisable(baseRequest);
+            } else if (type == RequestTypeEnum.Delete) {
+                errorMessage = baseValid.validDelete(baseRequest);
+            } else if (type == RequestTypeEnum.Select) {
+                errorMessage = baseValid.selectValidation(baseRequest);
+            } else if (type == RequestTypeEnum.SelectList) {
+                errorMessage = baseValid.selectListValidation(baseRequest);
+            } else if (type == RequestTypeEnum.Other) {
+                errorMessage = baseValid.otherValidation(baseRequest);
+            }
 
+            return true;
+        } else {
+            return false;
+        }
+    }
     private boolean isAuthenticated() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
