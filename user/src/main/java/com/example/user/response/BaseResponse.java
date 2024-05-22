@@ -9,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 
 @Data
 @Accessors(chain = true)
-@Builder
 public abstract class BaseResponse {
 
   private Boolean success;

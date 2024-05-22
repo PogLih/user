@@ -1,26 +1,18 @@
 package com.example.user.service;
 
-import com.example.user.annotation.RequestType;
 import com.example.user.annotation.RequestTypeEnum;
 import com.example.user.annotation.RequestValidation;
 import com.example.user.repository.BaseRepository;
 import com.example.user.request.BaseRequest;
 import com.example.user.response.BaseResponse;
 import com.example.user.response.SuccessResponse;
-import com.example.user.specification.BaseSpecification;
 import com.example.user.valid.BaseValid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationContextException;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -85,7 +77,7 @@ public class ServiceManager<T> {
 //            this.jpaRepository.saveAndFlush(result);
 //        }
         T result  = (T) serviceHandler.handleService();
-        return new SuccessResponse<T>().setData(result);
+        return SuccessResponse.builder().build();
     }
 
     private boolean requestValidation(BaseValid baseValid,RequestTypeEnum type){

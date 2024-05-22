@@ -1,7 +1,7 @@
 package com.example.user.request;
 
-import com.example.user.annotation.RequestType;
 import com.example.user.annotation.RequestTypeEnum;
+import com.example.user.annotation.RequestValidation;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,7 +10,7 @@ import java.util.Objects;
 @Getter
 @Setter
 @Builder
-@RequestType(value = RequestTypeEnum.CHECK)
+@RequestValidation(value = RequestTypeEnum.Other)
 public class LoginRequest extends BaseRequest{
     private final String username;
     private final String password;
