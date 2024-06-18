@@ -9,6 +9,7 @@ import com.example.user.response.SuccessResponse;
 import com.example.user.valid.BaseValid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,31 +23,6 @@ public class ServiceManager<T> {
     private Specification specification;
     private ServiceHandler serviceHandler;
     private BaseValid<T> baseValid;
-
-    public ServiceManager setRequest(BaseRequest baseRequest) {
-        this.baseRequest = baseRequest;
-        return this;
-    }
-
-    public ServiceManager setRepo(BaseRepository jpaRepository) {
-        this.jpaRepository = jpaRepository;
-        return this;
-    }
-
-    public ServiceManager setSpec(Specification specification) {
-        this.specification = specification;
-        return this;
-    }
-
-    public ServiceManager setServiceHandle(ServiceHandler<T, BaseResponse> handler) {
-        this.serviceHandler = handler;
-        return this;
-    }
-
-    public ServiceManager setValid(BaseValid baseValid) {
-        this.baseValid = baseValid;
-        return this;
-    }
 
     public BaseResponse execute() throws Exception {
         if (baseRequest == null) {
@@ -77,7 +53,11 @@ public class ServiceManager<T> {
 //            this.jpaRepository.saveAndFlush(result);
 //        }
         T result  = (T) serviceHandler.handleService();
-        return SuccessResponse.builder().build();
+        SuccessResponse<Object> response = SuccessResponse.builder().build();
+        response.setSuccess(true);
+        response.setStatus(HttpStatus.OK);
+        response.setData(result);
+        return response;
     }
 
     private boolean requestValidation(BaseValid baseValid,RequestTypeEnum type){
@@ -114,7 +94,30 @@ public class ServiceManager<T> {
         // Check if the user is authenticated
         return authentication != null && !(authentication instanceof AnonymousAuthenticationToken) && authentication.isAuthenticated();
     }
+    public ServiceManager setRequest(BaseRequest baseRequest) {
+        this.baseRequest = baseRequest;
+        return this;
+    }
 
+    public ServiceManager setRepo(BaseRepository jpaRepository) {
+        this.jpaRepository = jpaRepository;
+        return this;
+    }
+
+    public ServiceManager setSpec(Specification specification) {
+        this.specification = specification;
+        return this;
+    }
+
+    public ServiceManager setServiceHandle(ServiceHandler<T, BaseResponse> handler) {
+        this.serviceHandler = handler;
+        return this;
+    }
+
+    public ServiceManager setValid(BaseValid baseValid) {
+        this.baseValid = baseValid;
+        return this;
+    }
     public interface ServiceHandler<T, U extends BaseResponse> {
         T handleService();
     }

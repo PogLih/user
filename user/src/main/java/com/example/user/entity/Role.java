@@ -1,14 +1,12 @@
 package com.example.user.entity;
 import jakarta.persistence.*;
-import lombok.Builder;
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.Set;
 @Data
 @Entity
 @Builder
+@NoArgsConstructor
 @Table(name = "role")
 public class Role {
 
@@ -27,5 +25,11 @@ public class Role {
             inverseJoinColumns = @JoinColumn(name = "permission_id")
     )
     private Set<Permission> permissions;
-
+    @Builder
+    public Role(Long id, String name, Set<User> users, Set<Permission> permissions) {
+        this.id = id;
+        this.name = name;
+        this.users = users;
+        this.permissions = permissions;
+    }
 }
