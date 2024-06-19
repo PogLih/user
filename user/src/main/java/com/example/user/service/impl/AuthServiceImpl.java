@@ -54,10 +54,13 @@ public class AuthServiceImpl implements AuthService {
                 .setRepo(userRepository)
                 .setSpec(userSpecification.getByName(loginRequest))
                 .setValid(userValid)
-                .setServiceHandle(
-                        (ServiceHandler<User, LoginResponse>) () ->
-                                User.builder().username(loginRequest.getUsername()).password(loginRequest.getPassword()).build()
-                ).execute();
+                .setServiceHandle(new ServiceHandler<User,LoginResponse>() {
+                    @Override
+                    public LoginResponse handleService(User user) {
+                        return LoginResponse.builder().jwt("test").refreshToken("test").build();
+                    }
+                }
+        ).execute();
     }
 
     public BaseResponse signup(SignUpRequest signUpRequest) throws Exception {

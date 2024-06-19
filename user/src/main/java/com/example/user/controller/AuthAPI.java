@@ -19,10 +19,10 @@ public class AuthAPI {
     public ResponseEntity<?> handleLoginRequest(@ModelAttribute @Valid LoginRequest loginRequest) throws Exception {
         return authService.login(loginRequest).build();
     }
-    @GetMapping(value = {"/sign-up"})
-    public ResponseEntity<?> handleSignUpRequest(@RequestBody @Valid SignUpRequest loginRequest) throws Exception {
-        return authService.signup(loginRequest).build();
-    }
+//    @GetMapping(value = {"/sign-up"})
+//    public ResponseEntity<?> handleSignUpRequest(@RequestBody @Valid SignUpRequest loginRequest) throws Exception {
+//        return authService.signup(loginRequest).build();
+//    }
     @PostMapping(value = {"/refresh"})
     public ResponseEntity<?> handleRefreshRequest(@ModelAttribute @Valid LoginRequest loginRequest) throws Exception {
         return authService.login(loginRequest).build();

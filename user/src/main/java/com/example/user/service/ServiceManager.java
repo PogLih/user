@@ -15,6 +15,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+
 @Component
 @RequiredArgsConstructor
 public class ServiceManager<T> {
@@ -52,15 +54,16 @@ public class ServiceManager<T> {
 //            }
 //            this.jpaRepository.saveAndFlush(result);
 //        }
-        T result  = (T) serviceHandler.handleService();
-        SuccessResponse<Object> response = SuccessResponse.builder().build();
+        Optional<T> optional = jpaRepository.findOne(specification);
+        T result = (T) serviceHandler.handleService(optional.isPresent()?optional.get():null);
+        SuccessResponse<T> response = SuccessResponse.<T>builder().build();
         response.setSuccess(true);
         response.setStatus(HttpStatus.OK);
         response.setData(result);
         return response;
     }
 
-    private boolean requestValidation(BaseValid baseValid,RequestTypeEnum type){
+    private boolean requestValidation(BaseValid baseValid, RequestTypeEnum type) {
         if (type != null && baseValid != null) {
             BaseResponse errorMessage = null;
             if (type == RequestTypeEnum.Insert) {
@@ -88,12 +91,14 @@ public class ServiceManager<T> {
             return false;
         }
     }
+
     private boolean isAuthenticated() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         // Check if the user is authenticated
         return authentication != null && !(authentication instanceof AnonymousAuthenticationToken) && authentication.isAuthenticated();
     }
+
     public ServiceManager setRequest(BaseRequest baseRequest) {
         this.baseRequest = baseRequest;
         return this;
@@ -118,7 +123,8 @@ public class ServiceManager<T> {
         this.baseValid = baseValid;
         return this;
     }
+
     public interface ServiceHandler<T, U extends BaseResponse> {
-        T handleService();
+        U handleService(T entity);
     }
 }
