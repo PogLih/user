@@ -1,0 +1,19 @@
+# MySQL DataSource Configuration
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3300/dummy
+    username: root
+    password: 123
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # Hibernate Configuration
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+
+#server:
+#  port: 8080
