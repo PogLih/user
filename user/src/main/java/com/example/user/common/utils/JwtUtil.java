@@ -3,11 +3,15 @@ package com.example.user.common.utils;
 
 import com.example.user.application.config.properties.JwtTokenProperties;
 import com.example.user.application.config.properties.RefreshTokenProperties;
+import com.example.user.common.entity.Token;
 import com.example.user.common.entity.User;
 import com.example.user.common.model.AuthenticationToken;
+import com.example.user.database.repository.TokenRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.hibernate.query.sqm.TemporalUnit;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import io.jsonwebtoken.*;
@@ -43,11 +47,8 @@ public class JwtUtil {
     private static final Integer ACCESS_TOKEN_LENGTH = 64;
     private final JwtTokenProperties jwtTokenProperties;
     private final RefreshTokenProperties refreshTokenProperties;
-    private PublicKey publicKey;
-    private PrivateKey privateKey;
-    private static final String SECRET_KEY = "MoNiToRiNg";
 
-//    private final TokenRepository tokenRepository;
+    private final TokenRepository tokenRepository;
 
     public String getHeaderValueFromRequest(HttpServletRequest request, String header) {
         return request.getHeader(header);
@@ -73,39 +74,23 @@ public class JwtUtil {
 
     public AuthenticationToken generateJWT(User user) {
 //        Algorithm algorithm = Algorithm.RSA256((RSAPublicKey) publicKey, (RSAPrivateKey) privateKey);
-        Algorithm algorithm = Algorithm.HMAC256(SECRET_KEY);
-        OffsetDateTime issueAt = OffsetDateTime.now();
-        OffsetDateTime jwtExpiredAt = issueAt.plusSeconds(jwtTokenProperties.getTtlInSecond());
-        OffsetDateTime refreshTokenExpiredAt = issueAt.plusSeconds(
-                refreshTokenProperties.getTtlInSecond()
-        );
-        Tokens tokens = new Tokens().setToken(RandomStringUtils.randomAlphanumeric(ACCESS_TOKEN_LENGTH)).setUser(user).setExpiredAt(refreshTokenExpiredAt);
-        tokenRepository.save(tokens);
+//        Algorithm algorithm = Algorithm.HMAC256(SECRET_KEY);
+        Date issueAt = new Date(System.currentTimeMillis());
+        OffsetDateTime jwtExpiredAt = issueAt.toLocalDate().plus(jwtTokenProperties.getTtlInSecond(), TemporalUnit.SECOND);
+        OffsetDateTime refreshTokenExpiredAt = jwtExpiredAt;
+        Token token = new Token().setToken(RandomStringUtils.randomAlphanumeric(ACCESS_TOKEN_LENGTH)).setUser(user).setExpiredAt(refreshTokenExpiredAt);
+        tokenRepository.save(token);
 
-        Jwts.builder()
-                .id(tokens)
-                .claims(Map.of("userId",user.getId().toString()))
-                .issuer("userApplication")
+        JwtBuilder jwtBuilder = Jwts.builder()
+                .id(token.getToken())
+                .claims(Map.of("userId", user.getId().toString()))
+                .issuer(jwtTokenProperties.getIssuer())
                 .subject(user.getUsername())
-                .expiration(new Date(System.currentTimeMillis() + 3600 * 1000))
-                .notBefore(new Date(System.currentTimeMillis()))
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .signWith(new PrivateKey() {
-                    @Override
-                    public String getAlgorithm() {
-                        return null;
-                    }
-
-                    @Override
-                    public String getFormat() {
-                        return null;
-                    }
-
-                    @Override
-                    public byte[] getEncoded() {
-                        return new byte[0];
-                    }
-                });
+                .expiration(jwtExpiredAt)
+                .notBefore(issueAt)
+                .issuedAt(issueAt)
+                .signWith(getKey(user));
+        jwtBuilder.toString();
 
 
 //        String jwt = Jwt.create()
@@ -124,6 +109,15 @@ public class JwtUtil {
 //                .sign(algorithm);
 
         return new AuthenticationToken().setJwt(jwt).setRefreshToken(refreshToken);
+    }
+    private Key getKey(User user){
+        if(jwtTokenProperties.getType().equals("Asymmetric")){
+            return AsymmetricKey.generateRSAKeyPair(jwtTokenProperties.getPublicKey(),jwtTokenProperties.getPrivateKey());
+        } else if (jwtTokenProperties.getType().equals("Symmetric")) {
+            return SymmetricKey.generateSecretKey(user.getPassword(),jwtTokenProperties.getSalt(),jwtTokenProperties.getAlgorithm);
+        }else{
+            return null;
+        }
     }
 
 //    public DecodedJWT decodedJWTToken(String token) {
@@ -175,10 +169,10 @@ class AsymmetricKey {
 class SymmetricKey {
     private static final int ITERATION_COUNT = 65536;
     private static final int KEY_LENGTH = 256;
-    private static final String ALGORITHM = "PBKDF2WithHmacSHA256";
-    public static SecretKey generateSecretKey(String passphrase, String salt) throws NoSuchAlgorithmException, InvalidKeySpecException {
+//    private static final String ALGORITHM = "PBKDF2WithHmacSHA256";
+    public static SecretKey generateSecretKey(String passphrase, String salt,String algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException {
         PBEKeySpec spec = new PBEKeySpec(passphrase.toCharArray(), salt.getBytes(), ITERATION_COUNT, KEY_LENGTH);
-        SecretKeyFactory factory = SecretKeyFactory.getInstance(ALGORITHM);
+        SecretKeyFactory factory = SecretKeyFactory.getInstance(algorithm);
         byte[] keyBytes = factory.generateSecret(spec).getEncoded();
         SecretKey secretKey = new SecretKeySpec(keyBytes, "HmacSHA256");
         return secretKey;
