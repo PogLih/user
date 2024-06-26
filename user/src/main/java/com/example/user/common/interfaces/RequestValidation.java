@@ -1,4 +1,6 @@
-package com.example.user.common.annotation;
+package com.example.user.common.interfaces;
+
+import com.example.user.common.enums.RequestTypeEnum;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

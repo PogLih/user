@@ -1,20 +1,23 @@
 package com.example.user.common.entity;
+
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 import java.util.Set;
+
+@EqualsAndHashCode(callSuper = true)
 @Data
 @Entity
 @Builder
 @NoArgsConstructor
 @Table(name = "role")
-public class Role {
+public class Role extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
     @Column(unique = true)
-        private String name;
+    private String name;
     @ManyToMany(mappedBy = "roles")
     private Set<User> users;
 
@@ -25,9 +28,9 @@ public class Role {
             inverseJoinColumns = @JoinColumn(name = "permission_id")
     )
     private Set<Permission> permissions;
+
     @Builder
-    public Role(Long id, String name, Set<User> users, Set<Permission> permissions) {
-        this.id = id;
+    public Role(String name, Set<User> users, Set<Permission> permissions) {
         this.name = name;
         this.users = users;
         this.permissions = permissions;

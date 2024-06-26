@@ -1,12 +1,13 @@
 package com.example.user.common.request;
 
-import com.example.user.common.annotation.RequestTypeEnum;
-import com.example.user.common.annotation.RequestValidation;
+import com.example.user.common.enums.RequestTypeEnum;
+import com.example.user.common.interfaces.RequestValidation;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Objects;
+
 @Getter
 @Setter
 @Builder
@@ -19,6 +20,7 @@ public class LoginRequest extends com.example.user.common.request.BaseRequest {
         this.username = username;
         this.password = password;
     }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;

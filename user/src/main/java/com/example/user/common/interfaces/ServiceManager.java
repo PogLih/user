@@ -1,12 +1,10 @@
-package com.example.user.application.service;
+package com.example.user.common.interfaces;
 
-import com.example.user.common.annotation.RequestTypeEnum;
-import com.example.user.common.annotation.RequestValidation;
-import com.example.user.database.repository.BaseRepository;
+import com.example.user.common.enums.RequestTypeEnum;
 import com.example.user.common.request.BaseRequest;
 import com.example.user.common.response.BaseResponse;
 import com.example.user.common.response.SuccessResponse;
-import com.example.user.common.interfaces.BaseValid;
+import com.example.user.database.repository.BaseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
@@ -15,15 +13,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
-import java.util.Optional;
-
 @Component
 @RequiredArgsConstructor
 public class ServiceManager<T> {
     private BaseRequest baseRequest;
     private BaseRepository jpaRepository;
     private Specification specification;
-    private ServiceHandler serviceHandler;
+    private ServiceHandler.WriteHandler<T> serviceHandler;
     private BaseValid<T> baseValid;
 
     public BaseResponse execute() throws Exception {
@@ -54,8 +50,8 @@ public class ServiceManager<T> {
 //            }
 //            this.jpaRepository.saveAndFlush(result);
 //        }
-        Optional<T> optional = jpaRepository.findOne(specification);
-        T result = (T) serviceHandler.handleService(optional.isPresent()?optional.get():null);
+        T result =
+                ((ServiceHandler.WriteEntityHandler<T>) serviceHandler).onChangeWriteEntityHandled(baseRequest);
         SuccessResponse<T> response = SuccessResponse.<T>builder().build();
         response.setSuccess(true);
         response.setStatus(HttpStatus.OK);
@@ -114,7 +110,7 @@ public class ServiceManager<T> {
         return this;
     }
 
-    public ServiceManager setServiceHandle(ServiceHandler<T, BaseResponse> handler) {
+    public ServiceManager setServiceHandle(ServiceHandler.WriteHandler<T> handler) {
         this.serviceHandler = handler;
         return this;
     }
@@ -124,7 +120,5 @@ public class ServiceManager<T> {
         return this;
     }
 
-    public interface ServiceHandler<T, U extends BaseResponse> {
-        U handleService(T entity);
-    }
+
 }

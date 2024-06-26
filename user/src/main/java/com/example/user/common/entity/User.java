@@ -1,12 +1,17 @@
 package com.example.user.common.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -32,6 +37,8 @@ public class User implements UserDetails {
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
+    private Set<Token> token = new HashSet<>();
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -39,7 +46,12 @@ public class User implements UserDetails {
     }
 
     @Override
-    public String getUsername(){
+    public String getPassword() {
+        return null;
+    }
+
+    @Override
+    public String getUsername() {
         return email;
     }
 
@@ -61,5 +73,25 @@ public class User implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
+    }
+
+    @Column(name = "created_at", columnDefinition = "TIMESTAMP", nullable = false, updatable =
+            false)
+    private LocalDateTime createAt;
+
+    @Column(name = "modified_at", columnDefinition = "TIMESTAMP")
+    private LocalDateTime modifiedAt;
+
+    @Column(name = "deleted_at", columnDefinition = "TIMESTAMP")
+    private LocalDateTime deletedAt;
+
+    @PrePersist()
+    public void handlePrePersist() {
+        this.createAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void handlePreUpdate() {
+        this.modifiedAt = LocalDateTime.now();
     }
 }
