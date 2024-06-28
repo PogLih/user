@@ -110,15 +110,6 @@ public class JwtUtil {
         return AuthenticationToken.builder().jwt(jwt).refreshToken(refresh).build();
     }
 
-    //    public static Claims parseToken(String token) {
-//        byte[] keyBytes = Base64.getDecoder().decode(SECRET_KEY);
-//        Key key = new SecretKeySpec(keyBytes, SignatureAlgorithm.HS256.getJcaName());
-//
-//        return Jwts.parser()
-//                .setSigningKey(key)
-//                .parseClaimsJws(token)
-//                .getBody();
-//    }
     private JwtBuilder signJwt(JwtBuilder jwtBuilder, User user, String token) throws Exception {
         if (jwtTokenProperties.getType().equals("Asymmetric")) {
             return jwtBuilder.signWith(getPrivateKey());
