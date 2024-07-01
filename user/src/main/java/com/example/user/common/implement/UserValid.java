@@ -1,5 +1,6 @@
 package com.example.user.common.implement;
 
+import com.example.user.common.entity.User;
 import com.example.user.common.interfaces.BaseValid;
 import com.example.user.common.request.BaseRequest;
 import com.example.user.common.response.BaseResponse;
@@ -8,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class UserValid implements BaseValid {
+public class UserValid implements BaseValid<User> {
     @Override
     public BaseResponse validInsert(BaseRequest request) {
         return null;

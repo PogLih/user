@@ -1,21 +1,13 @@
 package com.example.user.common.response.dto;
 
-import com.example.user.common.response.BaseResponse;
 import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-@EqualsAndHashCode(callSuper = true)
+
 @Data
 @Accessors(chain = true)
 @Builder
-public class SignUpResponse extends BaseResponse {
+public class SignUpResponse {
     private String jwt;
     private String refreshToken;
-    @Override
-    public ResponseEntity<?> build() {
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
 }

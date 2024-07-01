@@ -5,9 +5,8 @@ import com.example.user.application.service.JWTService;
 import com.example.user.common.entity.Role;
 import com.example.user.common.entity.User;
 import com.example.user.common.implement.UserValid;
-import com.example.user.common.interfaces.ServiceHandler;
+import com.example.user.common.interfaces.ServiceHandler.WriteEntityHandler;
 import com.example.user.common.interfaces.ServiceManager;
-import com.example.user.common.request.BaseRequest;
 import com.example.user.common.request.LoginRequest;
 import com.example.user.common.request.SignUpRequest;
 import com.example.user.common.response.BaseResponse;
@@ -23,14 +22,16 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.util.HashMap;
+import java.util.Set;
 
 
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
-    private final ServiceManager<User> serviceManager;
+    private ServiceManager<User> serviceManager;
     private final UserRepository userRepository;
     private final UserSpecification userSpecification;
     private final UserValid userValid;
@@ -67,21 +68,25 @@ public class AuthServiceImpl implements AuthService {
 //    }
 
     public BaseResponse signup(SignUpRequest signUpRequest) throws Exception {
-        return serviceManager
-                .setRequest(signUpRequest)
-                .setRepo(userRepository)
-                .setSpec(userSpecification.getByName(signUpRequest))
-                .setValid(userValid)
-                .setServiceHandle(new ServiceHandler.WriteEntityHandler<User>() {
-                    @Override
-                    public User onChangeWriteEntityHandled(BaseRequest request) {
-                        Role role =
-                                roleRepository.findOne(roleSpecification.getByName("user")).orElse(null);
-                        if (role == null) {
-                            role = Role.builder().name("user").build();
-                        }
-                        return modelMapper.map(request, User.class);
+        return ServiceManager
+                .<User>builder().baseRequest(signUpRequest)
+                .specification(userSpecification.getByName(signUpRequest))
+                .baseValid(userValid)
+                .serviceHandler((WriteEntityHandler<User>) request -> {
+                    Role role =
+                            roleRepository.findOne(roleSpecification.getByName("user"))
+                                    .orElse(null);
+                    if (role == null) {
+                        role = Role.builder().name("user").build();
                     }
-                }).execute();
+                    User user = modelMapper.map(request, User.class);
+                    if (CollectionUtils.isEmpty(user.getRoles())) {
+                        user.setRoles(Set.of(role));
+                    } else {
+                        user.getRoles().add(role);
+                    }
+                    userRepository.saveAndFlush(user);
+                    return user;
+                }).build().execute();
     }
 }

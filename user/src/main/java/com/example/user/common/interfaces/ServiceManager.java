@@ -1,13 +1,13 @@
 package com.example.user.common.interfaces;
 
 import com.example.user.common.enums.RequestTypeEnum;
+import com.example.user.common.exception.ApplicationException;
 import com.example.user.common.request.BaseRequest;
 import com.example.user.common.response.BaseResponse;
 import com.example.user.common.response.SuccessResponse;
-import com.example.user.database.repository.BaseRepository;
+import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,27 +15,51 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
+@Builder
 public class ServiceManager<T> {
     private BaseRequest baseRequest;
-    private BaseRepository jpaRepository;
-    private Specification specification;
+    private Specification<T> specification;
     private ServiceHandler.WriteHandler<T> serviceHandler;
     private BaseValid<T> baseValid;
 
+    public ServiceManager(BaseRequest request, Specification specification,
+                          ServiceHandler.WriteHandler serviceHandler,
+                          BaseValid valid) {
+
+    }
+
+    public ServiceManager(BaseRequest request) {
+        this.baseRequest = request;
+    }
+
+
+    public ServiceManager(Specification<T> specification) {
+        this.specification = specification;
+    }
+
+    public ServiceManager(BaseValid<T> valid) {
+        this.baseValid = valid;
+    }
+
+    public ServiceManager(ServiceHandler.WriteEntityHandler<T> serviceHandler) {
+        this.serviceHandler = serviceHandler;
+    }
+
     public BaseResponse execute() throws Exception {
         if (baseRequest == null) {
-            throw new Exception();
+            throw new ApplicationException();
         }
         if (baseValid == null) {
             throw new Exception();
         }
-        RequestTypeEnum requestType = null;
+        RequestTypeEnum requestType;
         Class<?> clazz = baseRequest.getClass();
         if (clazz.isAnnotationPresent(RequestValidation.class)) {
             RequestValidation annotation = clazz.getAnnotation(RequestValidation.class);
             requestType = annotation.value();
             boolean result = requestValidation(baseValid, requestType);
         }
+
 //        if(requestType.equals(RequestTypeEnum.GET) || requestType.equals(RequestTypeEnum.CHECK)
 //         || requestType.equals(RequestTypeEnum.GET_LIST)){
 //            if(requestType.equals(RequestTypeEnum.GET_LIST)){
@@ -52,14 +76,11 @@ public class ServiceManager<T> {
 //        }
         T result =
                 ((ServiceHandler.WriteEntityHandler<T>) serviceHandler).onChangeWriteEntityHandled(baseRequest);
-        SuccessResponse<T> response = SuccessResponse.<T>builder().build();
-        response.setSuccess(true);
-        response.setStatus(HttpStatus.OK);
-        response.setData(result);
+        SuccessResponse<T> response = SuccessResponse.<T>builder().data(result).build();
         return response;
     }
 
-    private boolean requestValidation(BaseValid baseValid, RequestTypeEnum type) {
+    private boolean requestValidation(BaseValid<T> baseValid, RequestTypeEnum type) {
         if (type != null && baseValid != null) {
             BaseResponse errorMessage = null;
             if (type == RequestTypeEnum.Insert) {
@@ -94,31 +115,5 @@ public class ServiceManager<T> {
         // Check if the user is authenticated
         return authentication != null && !(authentication instanceof AnonymousAuthenticationToken) && authentication.isAuthenticated();
     }
-
-    public ServiceManager setRequest(BaseRequest baseRequest) {
-        this.baseRequest = baseRequest;
-        return this;
-    }
-
-    public ServiceManager setRepo(BaseRepository jpaRepository) {
-        this.jpaRepository = jpaRepository;
-        return this;
-    }
-
-    public ServiceManager setSpec(Specification specification) {
-        this.specification = specification;
-        return this;
-    }
-
-    public ServiceManager setServiceHandle(ServiceHandler.WriteHandler<T> handler) {
-        this.serviceHandler = handler;
-        return this;
-    }
-
-    public ServiceManager setValid(BaseValid baseValid) {
-        this.baseValid = baseValid;
-        return this;
-    }
-
 
 }

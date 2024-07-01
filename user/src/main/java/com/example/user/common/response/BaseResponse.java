@@ -1,7 +1,6 @@
 package com.example.user.common.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.springframework.http.HttpStatus;
@@ -11,11 +10,11 @@ import org.springframework.http.ResponseEntity;
 @Accessors(chain = true)
 public abstract class BaseResponse {
 
-  private Boolean success;
+    private Boolean success;
 
-  @JsonIgnore
-  private HttpStatus status;
+    @JsonIgnore
+    private HttpStatus status;
 
-  public abstract ResponseEntity<?> build();
+    public abstract ResponseEntity<?> build();
 
 }

@@ -40,29 +40,24 @@ import java.util.regex.Pattern;
 import static com.example.user.common.constant.UserConstant.JWT_DEFAULT_PRIVATE_KEY;
 import static com.example.user.common.constant.UserConstant.JWT_DEFAULT_PUBLIC_KEY;
 
-
 @Log4j2
 @Component
 @RequiredArgsConstructor
 public class JwtUtil {
 
     private static final Integer ACCESS_TOKEN_LENGTH = 64;
-    private final Pattern BEARER_PATTERN = Pattern.compile("Bearer\\s" +
-            "(?<tokenValue>.+)");
+    private final Pattern BEARER_PATTERN = Pattern.compile("Bearer\\s(?<tokenValue>.+)");
     private final JwtTokenProperties jwtTokenProperties;
     private final RefreshTokenProperties refreshTokenProperties;
-
     private final TokenRepository tokenRepository;
 
-    public String getHeaderValueFromRequest(HttpServletRequest request,
-                                            String header) {
+    public String getHeaderValueFromRequest(HttpServletRequest request, String header) {
         return request.getHeader(header);
     }
 
     public String getJwtTokenValueFromRequest(HttpServletRequest request) {
         try {
-            String headerVal = this.getHeaderValueFromRequest(request,
-                    HttpHeaders.AUTHORIZATION);
+            String headerVal = this.getHeaderValueFromRequest(request, HttpHeaders.AUTHORIZATION);
             if (Objects.isNull(headerVal)) {
                 return null;
             }
@@ -73,8 +68,7 @@ public class JwtUtil {
             }
             return null;
         } catch (Exception ex) {
-            log.error("Get header value failed with reason: {}",
-                    ex.getMessage());
+            log.error("Get header value failed with reason: {}", ex.getMessage());
             return null;
         }
     }
@@ -84,30 +78,44 @@ public class JwtUtil {
         Date jwtExpiredAt = DateUtil.plusOrMinus(issueAt, jwtTokenProperties.getTtlInSecond(),
                 ChronoUnit.SECONDS);
         Date refreshTokenExpiredAt = DateUtil.plusOrMinus(issueAt,
-                refreshTokenProperties.getTtlInSecond(),
-                ChronoUnit.SECONDS);
+                refreshTokenProperties.getTtlInSecond(), ChronoUnit.SECONDS);
 
-        Token jwtToken = Token.builder().token(RandomStringUtils
-                        .randomAlphanumeric(ACCESS_TOKEN_LENGTH))
-                .user(user).expiredAt(OffsetDateTime.now().plusSeconds(jwtTokenProperties.getTtlInSecond()))
-                .tokenType(TokenTypeEnum.Authentication).build();
+        Token jwtToken = Token.builder()
+                .token(RandomStringUtils.randomAlphanumeric(ACCESS_TOKEN_LENGTH))
+                .user(user)
+                .expiredAt(OffsetDateTime.now().plusSeconds(jwtTokenProperties.getTtlInSecond()))
+                .tokenType(TokenTypeEnum.Authentication)
+                .build();
         tokenRepository.save(jwtToken);
-        Token refreshToken =
-                Token.builder().token(RandomStringUtils.randomAlphanumeric(ACCESS_TOKEN_LENGTH))
-                        .user(user).expiredAt(OffsetDateTime.now().plusSeconds(refreshTokenProperties.getTtlInSecond()))
-                        .tokenType(TokenTypeEnum.Refresh).build();
+
+        Token refreshToken = Token.builder()
+                .token(RandomStringUtils.randomAlphanumeric(ACCESS_TOKEN_LENGTH))
+                .user(user)
+                .expiredAt(OffsetDateTime.now().plusSeconds(refreshTokenProperties.getTtlInSecond()))
+                .tokenType(TokenTypeEnum.Refresh)
+                .build();
         tokenRepository.save(refreshToken);
 
-        JwtBuilder jwtBuilder = Jwts.builder().claims(Map.of("userId",
-                        user.getId().toString())).issuer(jwtTokenProperties.getIssuer()).subject(jwtToken.getToken())
-                .expiration(jwtExpiredAt).notBefore(issueAt).issuedAt(issueAt);
+        JwtBuilder jwtBuilder = Jwts.builder()
+                .claims(Map.of("userId", user.getId().toString()))
+                .issuer(jwtTokenProperties.getIssuer())
+                .subject(jwtToken.getToken())
+                .expiration(jwtExpiredAt)
+                .notBefore(issueAt)
+                .issuedAt(issueAt);
         String jwt = signJwt(jwtBuilder, user, jwtToken.getToken()).compact();
 
-        String refresh =
-                Jwts.builder().issuer(refreshTokenProperties.getIssuer()).issuedAt(issueAt)
-                        .subject(refreshToken.getToken()).expiration(refreshTokenExpiredAt).compact();
+        String refresh = Jwts.builder()
+                .issuer(refreshTokenProperties.getIssuer())
+                .issuedAt(issueAt)
+                .subject(refreshToken.getToken())
+                .expiration(refreshTokenExpiredAt)
+                .compact();
 
-        return AuthenticationToken.builder().jwt(jwt).refreshToken(refresh).build();
+        return AuthenticationToken.builder()
+                .jwt(jwt)
+                .refreshToken(refresh)
+                .build();
     }
 
     private JwtBuilder signJwt(JwtBuilder jwtBuilder, User user, String token) throws Exception {
@@ -118,7 +126,6 @@ public class JwtUtil {
         }
         return jwtBuilder;
     }
-
 
     private SecretKey getSecretKey(String pass, String token) throws Exception {
         byte[] keyBytes =
@@ -138,18 +145,33 @@ public class JwtUtil {
         return AsymmetricKey.getPublicKey(keyBytes);
     }
 
+    public static void generateSecretKey(String passphrase, String keyPath) throws Exception {
+        SecretKey secretKey = SymmetricKey.generateSecretKey(passphrase, new byte[16]);
+        byte[] encoded = secretKey.getEncoded();
+        Files.write(new File(keyPath).toPath(), encoded);
+    }
+
+    public static void generateRSAKeyPair(String publicKeyPath, String privateKeyPath) throws Exception {
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+        keyPairGenerator.initialize(2048);
+        KeyPair keyPair = keyPairGenerator.generateKeyPair();
+
+        PublicKey publicKey = keyPair.getPublic();
+        PrivateKey privateKey = keyPair.getPrivate();
+
+        Files.write(new File(publicKeyPath).toPath(), publicKey.getEncoded());
+        Files.write(new File(privateKeyPath).toPath(), privateKey.getEncoded());
+    }
 }
 
 class AsymmetricKey {
-    private static final String ALGORITHM = "SHA256withRSA";
+    private static final String ALGORITHM = "RSA";
 
-    public static KeyPair generateRSAKeyPair(String publicKey,
-                                             String privateKey) throws NoSuchAlgorithmException,
-            InvalidKeySpecException {
-        return new KeyPair(getPublicKey(StringUtils.hasLength(publicKey) ?
-                publicKey : JWT_DEFAULT_PUBLIC_KEY),
-                getPrivateKey(StringUtils.hasLength(privateKey) ? privateKey
-                        : JWT_DEFAULT_PRIVATE_KEY));
+    public static KeyPair generateRSAKeyPair(String publicKey, String privateKey) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        return new KeyPair(getPublicKey(StringUtils.hasLength(publicKey) ? publicKey :
+                JWT_DEFAULT_PUBLIC_KEY),
+                getPrivateKey(StringUtils.hasLength(privateKey) ? privateKey :
+                        JWT_DEFAULT_PRIVATE_KEY));
     }
 
     public static PublicKey getPublicKey(String publicKeyString) throws NoSuchAlgorithmException,
@@ -160,8 +182,8 @@ class AsymmetricKey {
         return keyFactory.generatePublic(keySpec);
     }
 
-    public static PrivateKey getPrivateKey(byte[] privateKeyByte) throws NoSuchAlgorithmException,
-            InvalidKeySpecException {
+    public static PrivateKey getPrivateKey(byte[] privateKeyByte) throws NoSuchAlgorithmException
+            , InvalidKeySpecException {
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKeyByte);
         KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM);
         return keyFactory.generatePrivate(keySpec);
@@ -185,17 +207,14 @@ class AsymmetricKey {
 class SymmetricKey {
     private static final int ITERATION_COUNT = 65536;
     private static final int KEY_LENGTH = 256;
-    private static final String ALGORITHM = "HmacSHA256";
+    private static final String ALGORITHM = "PBKDF2WithHmacSHA256";
 
-    //    private static final String ALGORITHM = "PBKDF2WithHmacSHA256";
-    public static SecretKey generateSecretKey(String passphrase, byte[] salt) throws NoSuchAlgorithmException,
-            InvalidKeySpecException {
-        PBEKeySpec spec = new PBEKeySpec(passphrase.toCharArray(),
-                salt, ITERATION_COUNT, KEY_LENGTH);
+    public static SecretKey generateSecretKey(String passphrase, byte[] salt) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        PBEKeySpec spec = new PBEKeySpec(passphrase.toCharArray(), salt, ITERATION_COUNT,
+                KEY_LENGTH);
         SecretKeyFactory factory = SecretKeyFactory.getInstance(ALGORITHM);
         byte[] keyBytes = factory.generateSecret(spec).getEncoded();
 
-        SecretKey secretKey = new SecretKeySpec(keyBytes, ALGORITHM);
-        return secretKey;
+        return new SecretKeySpec(keyBytes, "HmacSHA256");
     }
 }
