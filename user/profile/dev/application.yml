@@ -6,7 +6,7 @@ spring:
     password: 123
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-# Hibernate Configuration
+  # Hibernate Configuration
   jpa:
     show-sql: true
     hibernate:
@@ -14,8 +14,9 @@ spring:
     properties:
       hibernate:
         format_sql: true
+    open-in-view: false
 
-# Jwt Configuration
+  # Jwt Configuration
   security:
     generate:
       jwt:

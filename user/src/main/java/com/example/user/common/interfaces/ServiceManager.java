@@ -5,8 +5,10 @@ import com.example.user.common.exception.ApplicationException;
 import com.example.user.common.request.BaseRequest;
 import com.example.user.common.response.BaseResponse;
 import com.example.user.common.response.SuccessResponse;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.RequiredArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -14,19 +16,16 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
+@Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ServiceManager<T> {
     private BaseRequest baseRequest;
     private Specification<T> specification;
     private ServiceHandler.WriteHandler<T> serviceHandler;
     private BaseValid<T> baseValid;
 
-    public ServiceManager(BaseRequest request, Specification specification,
-                          ServiceHandler.WriteHandler serviceHandler,
-                          BaseValid valid) {
-
-    }
 
     public ServiceManager(BaseRequest request) {
         this.baseRequest = request;

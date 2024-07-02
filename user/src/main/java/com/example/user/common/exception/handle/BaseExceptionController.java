@@ -22,19 +22,22 @@ public class BaseExceptionController extends ResponseEntityExceptionHandler {
     public ResponseEntity<?> handleException(Exception e) {
         e.printStackTrace();
         Map<String, String> errors = new HashMap<>();
-        errors.put("messages","An internal error occurred");
+        errors.put("messages", "An internal error occurred");
         FailureResponse<Object> response = FailureResponse.builder().errors(errors).build();
         return response.build();
     }
+
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(ApplicationException.class)
     public ResponseEntity<?> handleException(ApplicationException ex, WebRequest request) {
+        ex.printStackTrace();
         Map<String, String> errors = new HashMap<>();
-        errors.put("messages","An internal error occurred");
+        errors.put("messages", "An internal error occurred");
         FailureResponse<Object> response = FailureResponse.builder().errors(errors).build();
-        return response.build();    }
+        return response.build();
+    }
 
-//    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    //    @ResponseStatus(HttpStatus.BAD_REQUEST)
 //    @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
@@ -43,7 +46,8 @@ public class BaseExceptionController extends ResponseEntityExceptionHandler {
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
-        FailureResponse<Map<String, String>> response = FailureResponse.<Map<String, String>>builder().errors(errors).build();
+        FailureResponse<Map<String, String>> response =
+                FailureResponse.<Map<String, String>>builder().errors(errors).build();
         return response.build();
     }
 }
