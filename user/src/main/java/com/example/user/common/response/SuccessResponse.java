@@ -1,32 +1,23 @@
 package com.example.user.common.response;
 
-import lombok.Builder;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 
-@Data
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
-@Builder
-public class SuccessResponse<D> extends BaseResponse {
-    private D data;
+public class SuccessResponse extends BaseResponse {
 
     public SuccessResponse() {
+        super(HttpStatus.OK);
         super.setSuccess(true);
-        super.setStatus(HttpStatus.OK);
     }
 
-    public SuccessResponse(D data) {
+    public SuccessResponse(Object data) {
         this();
-        this.data = data;
+        super.addPayloadKey("data", data);
     }
 
-    @Override
-    public ResponseEntity<SuccessResponse<D>> build() {
-        return ResponseEntity.status(super.getStatus()).body(this);
-    }
+
 }

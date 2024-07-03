@@ -1,33 +1,35 @@
 package com.example.user.common.response;
 
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.experimental.Accessors;
+import com.example.user.common.enums.ErrorCodeEnum;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
-@EqualsAndHashCode(callSuper = false)
-@Accessors(chain = true)
-@Data
-@Builder
-public class FailureResponse<D> extends BaseResponse {
+import java.util.Iterator;
 
-    private D errors;
+public class FailureResponse extends BaseResponse {
 
     public FailureResponse() {
-        super.setStatus(HttpStatus.BAD_REQUEST);
+        super(HttpStatus.BAD_REQUEST);
         super.setSuccess(false);
     }
 
-    public FailureResponse(D errors) {
-        this();
-        this.errors = errors;
+    public FailureResponse setErrorMessage(Throwable throwable) {
+        super.addPayloadKey("errorMessage", throwable.getMessage());
+        return this;
     }
 
-    @Override
-    public ResponseEntity<FailureResponse<D>> build() {
-        return ResponseEntity.status(super.getStatus()).body(this);
+    public FailureResponse setErrorMessage(String message) {
+        super.addPayloadKey("message", message);
+        return this;
+    }
+
+    public FailureResponse setErrorCode(ErrorCodeEnum errorCodeEnum) {
+        super.addPayloadKey("errorCode", errorCodeEnum);
+        return this;
+    }
+
+    public FailureResponse setErrors(Iterator<Object> objects) {
+        super.addPayloadKey("errors", objects);
+        return this;
     }
 
 }

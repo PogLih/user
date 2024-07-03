@@ -75,8 +75,7 @@ public class ServiceManager<T> {
 //        }
         T result =
                 ((ServiceHandler.WriteEntityHandler<T>) serviceHandler).onChangeWriteEntityHandled(baseRequest);
-        SuccessResponse<T> response = SuccessResponse.<T>builder().data(result).build();
-        return response;
+        return new SuccessResponse(result);
     }
 
     private boolean requestValidation(BaseValid<T> baseValid, RequestTypeEnum type) {

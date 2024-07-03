@@ -2,9 +2,9 @@ package com.example.user.common.exception;
 
 import lombok.Getter;
 
+@Getter
 public class ApplicationException extends RuntimeException {
 
-    @Getter
     private String errorCode;
 
     public ApplicationException() {

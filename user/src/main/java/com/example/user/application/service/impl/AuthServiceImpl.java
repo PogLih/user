@@ -67,6 +67,7 @@ public class AuthServiceImpl implements AuthService {
 //                ).execute();
 //    }
 
+    @Override
     public BaseResponse signup(SignUpRequest signUpRequest) throws Exception {
         return ServiceManager
                 .<User>builder().baseRequest(signUpRequest)
