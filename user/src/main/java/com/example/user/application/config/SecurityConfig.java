@@ -12,6 +12,7 @@ import com.example.user.common.response.FailureResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -54,17 +56,10 @@ public class SecurityConfig {
     setCORS(http);
     applyAuthenticationConfig(http);
     applyExceptionHandler(http);
-//    csrf(http).cors(httpSecurityCorsConfigurer -> httpSecurityCorsConfigurer.configure(http))
-//        .authorizeHttpRequests(
-//            authorizationManagerRequestMatcherRegistry -> authorizationManagerRequestMatcherRegistry.requestMatchers(
-//                    "/auth/*").permitAll().requestMatchers("/auth/admin/**").hasAnyAuthority("ADMIN")
-//                .anyRequest().authenticated()).sessionManagement(
-//            manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//        .authenticationProvider(authenticationProvider())
-//        .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class)
-//        .userDetailsService(userDetailService).exceptionHandling(
-//            httpSecurityExceptionHandlingConfigurer -> httpSecurityExceptionHandlingConfigurer.configure(
-//                http));
+
+    http.authenticationProvider(authenticationProvider())
+        .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class)
+        .userDetailsService(userDetailService);
     return http.build();
   }
 
@@ -86,13 +81,19 @@ public class SecurityConfig {
     if (csrfProperties != null) {
       if (csrfProperties.isEnabled()) {
         RequestMatcher requireProtectRequests =
-            new AntPathRequestMatcher(csrfProperties.getProtectList());
+            new AntPathRequestMatcher(
+                StringUtils.isEmpty(csrfProperties.getProtectList()) ? "/**"
+                    : csrfProperties.getProtectList());
+        RequestMatcher ignoreListRequest = new AntPathRequestMatcher(
+            StringUtils.isEmpty(csrfProperties.getIgnoreList()) ? "/**"
+                : csrfProperties.getIgnoreList());
+
         http.csrf(httpSecurityCsrfConfigurer -> {
           httpSecurityCsrfConfigurer.csrfTokenRepository(
-                  CookieCsrfTokenRepository.withHttpOnlyFalse())
-              .ignoringRequestMatchers(csrfProperties.ignoreList)
+                  csrfProperties.isWithHttp() ? new CookieCsrfTokenRepository()
+                      : CookieCsrfTokenRepository.withHttpOnlyFalse())
+              .ignoringRequestMatchers(ignoreListRequest)
               .requireCsrfProtectionMatcher(requireProtectRequests);
-
         });
       } else {
         http.csrf(AbstractHttpConfigurer::disable);
@@ -106,6 +107,7 @@ public class SecurityConfig {
         config.configurationSource(this.buildCORSConfiguration());
       });
     } else {
+      http.cors(AbstractHttpConfigurer::disable);
       log.debug("CORS is disabled. Allowed all request from all origins");
     }
   }
@@ -147,14 +149,12 @@ public class SecurityConfig {
     http.authorizeHttpRequests(config -> {
       if (!authenticationProperties.getPublicPaths().isEmpty()) {
         authenticationProperties.getPublicPaths().forEach(publicPath -> {
-          if (publicPath.getMethods().isEmpty()) {
-            config.antMatchers(publicPath.getUrl()).permitAll();
-          } else {
-            publicPath.getMethods().forEach(method -> {
-              config.antMatchers(method, publicPath.getUrl()).permitAll();
-            });
-          }
+          publicPath.getMethods().forEach(method -> {
+            config.requestMatchers(method, publicPath.getUrl()).permitAll();
+          });
         });
+      } else {
+        config.requestMatchers("/**").permitAll();
       }
       config.anyRequest().authenticated();
     });
@@ -176,7 +176,6 @@ public class SecurityConfig {
 
       response.setContentType(MediaType.APPLICATION_JSON_VALUE);
       response.setStatus(HttpStatus.UNAUTHORIZED.value());
-      response.getWriter().write(new ObjectMapper().writeValueAsString(build.getBody()));
       response.getWriter().write(new ObjectMapper().writeValueAsString(build.getBody()));
     });
   }
