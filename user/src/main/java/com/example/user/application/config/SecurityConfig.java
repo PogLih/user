@@ -1,15 +1,18 @@
 package com.example.user.application.config;
 
+import com.example.common_component.enums.ErrorCodeEnum;
+import com.example.common_component.response.ResponseData;
+import com.example.common_component.validation.ErrorObject;
 import com.example.user.application.config.properties.AuthenticationProperties;
 import com.example.user.application.config.properties.CORSProperties;
 import com.example.user.application.config.properties.CSRFProperties;
 import com.example.user.application.config.properties.SessionProperties;
 import com.example.user.application.filter.JwtRequestAuthenticateFilter;
-import com.example.user.application.service.impl.UserDetailServiceImpl;
-import com.example.user.common.enums.ErrorCodeEnum;
-import com.example.user.common.response.BaseResponse;
-import com.example.user.common.response.FailureResponse;
+import com.example.user.service.impl.UserDetailServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -78,26 +81,23 @@ public class SecurityConfig {
   }
 
   private void setCSRF(HttpSecurity http) throws Exception {
-    if (csrfProperties != null) {
-      if (csrfProperties.isEnabled()) {
-        RequestMatcher requireProtectRequests =
-            new AntPathRequestMatcher(
-                StringUtils.isEmpty(csrfProperties.getProtectList()) ? "/**"
-                    : csrfProperties.getProtectList());
-        RequestMatcher ignoreListRequest = new AntPathRequestMatcher(
-            StringUtils.isEmpty(csrfProperties.getIgnoreList()) ? "/**"
-                : csrfProperties.getIgnoreList());
+    if (csrfProperties != null && csrfProperties.isEnabled()) {
+      RequestMatcher requireProtectRequests = new AntPathRequestMatcher(
+          StringUtils.isEmpty(csrfProperties.getProtectList()) ? "/**"
+              : csrfProperties.getProtectList());
+      RequestMatcher ignoreListRequest = new AntPathRequestMatcher(
+          StringUtils.isEmpty(csrfProperties.getIgnoreList()) ? "/**"
+              : csrfProperties.getIgnoreList());
 
-        http.csrf(httpSecurityCsrfConfigurer -> {
-          httpSecurityCsrfConfigurer.csrfTokenRepository(
-                  csrfProperties.isWithHttp() ? new CookieCsrfTokenRepository()
-                      : CookieCsrfTokenRepository.withHttpOnlyFalse())
-              .ignoringRequestMatchers(ignoreListRequest)
-              .requireCsrfProtectionMatcher(requireProtectRequests);
-        });
-      } else {
-        http.csrf(AbstractHttpConfigurer::disable);
-      }
+      http.csrf(httpSecurityCsrfConfigurer -> {
+        httpSecurityCsrfConfigurer.csrfTokenRepository(
+                csrfProperties.isWithHttp() ? new CookieCsrfTokenRepository()
+                    : CookieCsrfTokenRepository.withHttpOnlyFalse())
+            .ignoringRequestMatchers(ignoreListRequest)
+            .requireCsrfProtectionMatcher(requireProtectRequests);
+      });
+    } else {
+      http.csrf(AbstractHttpConfigurer::disable);
     }
   }
 
@@ -117,41 +117,40 @@ public class SecurityConfig {
 
     configuration.setAllowedOriginPatterns(!corsProperties.getAllowedOriginPatterns().isEmpty()
         ? corsProperties.getAllowedOriginPatterns()
-        : null);//ex:"http://example.com" or "http://exa*.com"
+        : List.of("*"));//ex:"http://example.com" or "http://exa*.com"
     configuration.setAllowedMethods(
-        !corsProperties.getAllowedMethods().isEmpty() ? corsProperties.getAllowedMethods()
-            : null); //ex:GET, POST, PUT, DELETE, etc
+        corsProperties.getAllowedMethods().isEmpty()
+            ? Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")
+            : corsProperties.getAllowedMethods());
     configuration.setAllowedHeaders(
-        !corsProperties.getAllowedHeaders().isEmpty() ? corsProperties.getAllowedHeaders()
-            : null);//ex:"Content-Type", "Authorization
+        corsProperties.getAllowedHeaders().isEmpty()
+            ? Arrays.asList("Content-Type", "Authorization")
+            : corsProperties.getAllowedHeaders());
     configuration.setExposedHeaders(
-        !corsProperties.getExposedHeader().isEmpty() ? corsProperties.getExposedHeader() : null)
-    ;//ex:"X-Custom-Header"
+        corsProperties.getExposedHeader().isEmpty()
+            ? List.of("X-Custom-Header")
+            : corsProperties.getExposedHeader());
     configuration.setAllowCredentials(corsProperties.isAllowCredentials());
-    configuration.setMaxAge(corsProperties.getMaxAge() != null ?
-        corsProperties.getMaxAge() : 36400L);
+    configuration.setMaxAge(corsProperties.getMaxAge() != null
+        ? corsProperties.getMaxAge() : 3600L);
+
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", configuration);
     return source;
-
-
   }
 
   private void applyAuthenticationConfig(HttpSecurity http) throws Exception {
     if (authenticationProperties.isByPassAuth()) {
-      log.warn("*** WARNING: Authentication was bypassed. Do NOT use in production " +
-          "deployments.");
-      http.authorizeHttpRequests(config -> {
-        config.anyRequest().permitAll();
-      });
+      log.warn("*** WARNING: Authentication was bypassed. Do NOT use in production deployments.");
+      http.authorizeHttpRequests(config -> config.anyRequest().permitAll());
       return;
     }
+
     http.authorizeHttpRequests(config -> {
       if (!authenticationProperties.getPublicPaths().isEmpty()) {
         authenticationProperties.getPublicPaths().forEach(publicPath -> {
-          publicPath.getMethods().forEach(method -> {
-            config.requestMatchers(method, publicPath.getUrl()).permitAll();
-          });
+          publicPath.getMethods().forEach(method ->
+              config.requestMatchers(method, publicPath.getUrl()).permitAll());
         });
       } else {
         config.requestMatchers("/**").permitAll();
@@ -168,27 +167,29 @@ public class SecurityConfig {
   }
 
   private AuthenticationEntryPoint buildAuthenticationEntryPoint() {
-    return ((request, response, authException) -> {
-      BaseResponse responseEntity = new FailureResponse().setErrorMessage("You need to " +
-              "login first in order to perform this action.")
-          .setErrorCode(ErrorCodeEnum.NEED_AUTHENTICATE);
-      ResponseEntity<?> build = responseEntity.build();
+    return (request, response, authException) -> {
+      ResponseData responseData = ResponseData.builder().data(
+          ErrorObject.builder().message("You need to login first in order to perform this action.")
+              .code(ErrorCodeEnum.NEED_AUTHENTICATE).build()).build();
+      ResponseEntity<?> build = ResponseEntity.of(Optional.of(responseData));
 
       response.setContentType(MediaType.APPLICATION_JSON_VALUE);
       response.setStatus(HttpStatus.UNAUTHORIZED.value());
       response.getWriter().write(new ObjectMapper().writeValueAsString(build.getBody()));
-    });
+    };
   }
 
   private AccessDeniedHandler buildAccessDeniedHandler() {
-    return ((request, response, accessDeniedException) -> {
-      BaseResponse responseEntity = new FailureResponse().setErrorMessage("You don't have " +
-          "required role to perform this action.").setErrorCode(ErrorCodeEnum.NOT_HAVE_PERMISSION);
-      ResponseEntity<?> build = responseEntity.build();
+    return (request, response, accessDeniedException) -> {
+      ResponseData responseData = ResponseData.builder().data(
+          ErrorObject.builder().message("You don't have " +
+                  "required role to perform this action.")
+              .code(ErrorCodeEnum.NOT_HAVE_PERMISSION).build()).build();
+      ResponseEntity<?> build = ResponseEntity.of(Optional.of(responseData));
 
       response.setContentType(MediaType.APPLICATION_JSON_VALUE);
       response.setStatus(HttpStatus.FORBIDDEN.value());
       response.getWriter().write(new ObjectMapper().writeValueAsString(build.getBody()));
-    });
+    };
   }
 }
