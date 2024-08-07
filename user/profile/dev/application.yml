@@ -17,9 +17,9 @@ spring:
     open-in-view: false
 
   # Jwt Configuration
-  security:
-    generate:
-      jwt:
-        is-sure
+#  security:
+#    generate:
+#      jwt:
+#        is-issuer
 #server:
 #  port: 8080

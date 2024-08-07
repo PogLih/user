@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 @Data
 @Component
-@ConfigurationProperties(prefix = "security.crfs")
+@ConfigurationProperties(prefix = "security.csrf")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CSRFProperties {
 
