@@ -32,6 +32,7 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.crypto.SecretKey;
@@ -40,7 +41,6 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -51,6 +51,8 @@ import org.springframework.util.StringUtils;
 public class JwtUtil {
 
   private static final Integer ACCESS_TOKEN_LENGTH = 64;
+  private static final Random random = new Random();
+  private static final String CHAR_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   private final Pattern BEARER_PATTERN = Pattern.compile("Bearer\\s(?<tokenValue>.+)");
   private final JwtTokenProperties jwtTokenProperties;
   private final RefreshTokenProperties refreshTokenProperties;
@@ -86,7 +88,7 @@ public class JwtUtil {
         refreshTokenProperties.getTtlInSecond(), ChronoUnit.SECONDS);
 
     Token jwtToken = Token.builder()
-        .token(RandomStringUtils.randomAlphanumeric(ACCESS_TOKEN_LENGTH))
+        .token(generateRandomString(ACCESS_TOKEN_LENGTH))
         .user(user)
         .expiredAt(OffsetDateTime.now().plusSeconds(jwtTokenProperties.getTtlInSecond()))
         .tokenType(TokenTypeEnum.Authentication)
@@ -94,7 +96,7 @@ public class JwtUtil {
     tokenRepository.save(jwtToken);
 
     Token refreshToken = Token.builder()
-        .token(RandomStringUtils.randomAlphanumeric(ACCESS_TOKEN_LENGTH))
+        .token(generateRandomString(ACCESS_TOKEN_LENGTH))
         .user(user)
         .expiredAt(OffsetDateTime.now().plusSeconds(refreshTokenProperties.getTtlInSecond()))
         .tokenType(TokenTypeEnum.Refresh)
@@ -121,6 +123,14 @@ public class JwtUtil {
         .jwt(jwt)
         .refreshToken(refresh)
         .build();
+  }
+
+  public static String generateRandomString(int length) {
+    StringBuilder result = new StringBuilder(length);
+    for (int i = 0; i < length; i++) {
+      result.append(CHAR_POOL.charAt(random.nextInt(CHAR_POOL.length())));
+    }
+    return result.toString();
   }
 
   private JwtBuilder signJwt(JwtBuilder jwtBuilder, User user, String token) throws Exception {

@@ -5,7 +5,6 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import com.example.user.service.AuthService;
 import com.example.user.service.JWTService;
 import com.example.user.service.UserService;
-import com.mysql.cj.util.StringUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
@@ -34,14 +34,14 @@ public class JwtRequestAuthenticateFilter extends OncePerRequestFilter {
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
       FilterChain filterChain) throws ServletException, IOException {
     String authHeader = request.getHeader(AUTHORIZATION);
-    if (StringUtils.isNullOrEmpty(authHeader) || StringUtils.startsWithIgnoreCase(authHeader,
+    if (!StringUtils.hasLength(authHeader) || StringUtils.startsWithIgnoreCase(authHeader,
         "Bearer ")) {
       filterChain.doFilter(request, response);
       return;
     }
     String jwt = authHeader.substring(7);
     String userEmail = jwtService.extractUsername(jwt);
-    if (StringUtils.isNullOrEmpty(userEmail)
+    if (!StringUtils.hasLength(userEmail)
         && SecurityContextHolder.getContext().getAuthentication() == null) {
       UserDetails userDetails = userService.loadUserByUsername(userEmail);
       if (jwtService.isTokenValid(jwt, userDetails)) {

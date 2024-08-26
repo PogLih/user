@@ -1,5 +1,9 @@
 # MySQL DataSource Configuration
 spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+
   datasource:
     url: jdbc:mysql://localhost:3300/dummy
     username: root
@@ -15,7 +19,8 @@ spring:
       hibernate:
         format_sql: true
     open-in-view: false
-
+  profiles:
+    active: dev
   # Jwt Configuration
 #  security:
 #    generate:

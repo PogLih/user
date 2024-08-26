@@ -10,9 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.stereotype.Component;
 
-@Component
 @Data
 @Builder
 @NoArgsConstructor
@@ -73,7 +71,7 @@ public class ServiceManager<T> {
     T result =
         ((ServiceHandler.WriteEntityHandler<T>) serviceHandler).onChangeWriteEntityHandled(
             baseRequest);
-    return ResponseData.builder().data(result).build();
+    return null;
   }
 
   private boolean requestValidation(BaseValid<T> baseValid, RequestTypeEnum type) {

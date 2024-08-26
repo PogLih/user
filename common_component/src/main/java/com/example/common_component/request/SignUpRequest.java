@@ -1,9 +1,7 @@
 package com.example.common_component.request;
 
 import java.util.Objects;
-import lombok.Data;
 
-@Data
 public class SignUpRequest extends BaseRequest {
 
   private final String username;
@@ -16,26 +14,27 @@ public class SignUpRequest extends BaseRequest {
     this.email = email;
   }
 
-  public String username() {
+
+  public String getUsername() {
     return username;
   }
 
-  public String password() {
+  public String getPassword() {
     return password;
   }
 
-  public String email() {
+  public String getEmail() {
     return email;
   }
 
   @Override
   public boolean equals(Object obj) {
-      if (obj == this) {
-          return true;
-      }
-      if (obj == null || obj.getClass() != this.getClass()) {
-          return false;
-      }
+    if (obj == this) {
+      return true;
+    }
+    if (obj == null || obj.getClass() != this.getClass()) {
+      return false;
+    }
     var that = (SignUpRequest) obj;
     return Objects.equals(this.username, that.username) &&
         Objects.equals(this.password, that.password) &&

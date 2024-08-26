@@ -1,12 +1,21 @@
 package com.example.common_component.response;
 
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.experimental.FieldDefaults;
-
-@FieldDefaults(level = AccessLevel.PRIVATE)
-@Builder
 public class ResponseData extends BaseResponse {
 
-  Object data;
+  private Object data;
+
+  public ResponseData(Object data) {
+    this.data = data;
+  }
+
+  public ResponseData() {
+  }
+
+  public Object getData() {
+    return data;
+  }
+
+  public void setData(Object data) {
+    this.data = data;
+  }
 }

@@ -31,6 +31,7 @@
           </resource>
           <resource>
             <directory>src/main/resources</directory>
+            <filtering>true</filtering>
           </resource>
         </resources>
       </build>
@@ -45,9 +46,10 @@
           <resource>
             <directory>profile/prod</directory>
             <filtering>true</filtering>
-            <includes>
-              <include>application.yml</include>
-            </includes>
+          </resource>
+          <resource>
+            <directory>src/main/resources</directory>
+            <filtering>true</filtering>
           </resource>
         </resources>
       </build>
@@ -56,30 +58,12 @@
   <dependencies>
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-data-jpa</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-security</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
-    <!--        <dependency>-->
-    <!--            <groupId>org.springframework.boot</groupId>-->
-    <!--            <artifactId>spring-boot-starter-web-services</artifactId>-->
-    <!--        </dependency>-->
-    <!--        <dependency>-->
-    <!--            <groupId>org.springframework.boot</groupId>-->
-    <!--            <artifactId>spring-boot-devtools</artifactId>-->
-    <!--            <scope>runtime</scope>-->
-    <!--            <optional>true</optional>-->
-    <!--        </dependency>-->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-configuration-processor</artifactId>
@@ -110,15 +94,6 @@
       <artifactId>data_component</artifactId>
       <version>0.0.1-SNAPSHOT</version>
     </dependency>
-    <!--		<dependency>-->
-    <!--			<groupId>org.springframework.session</groupId>-->
-    <!--			<artifactId>spring-session-core</artifactId>-->
-    <!--		</dependency>-->
-    <dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
-      <version>8.0.33</version>
-    </dependency>
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
@@ -129,16 +104,7 @@
       <artifactId>jjwt</artifactId>
       <version>0.12.4</version>
     </dependency>
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-    </dependency>
-    <!--    <dependency>-->
-    <!--      <groupId>io.micrometer</groupId>-->
-    <!--      <artifactId>micrometer-observation</artifactId>-->
-    <!--    </dependency>-->
   </dependencies>
-
   <build>
     <plugins>
       <plugin>
@@ -166,5 +132,4 @@
       </plugin>
     </plugins>
   </build>
-
 </project>

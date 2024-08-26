@@ -16,16 +16,20 @@ public class BaseExceptionController extends ResponseEntityExceptionHandler {
   @ExceptionHandler(Exception.class)
   public ResponseData handleException(Exception e) {
     e.printStackTrace();
-    return ResponseData.builder().data(e).build();
+    ResponseData responseData = new ResponseData();
+    responseData.setData(e);
+    return responseData;
   }
 
   @ExceptionHandler(ApplicationException.class)
-  public ResponseData handleException(ApplicationException ex, WebRequest request) {
-    ex.printStackTrace();
-    return ResponseData.builder().data(ex).build();
+  public ResponseData handleException(ApplicationException e, WebRequest request) {
+    e.printStackTrace();
+    ResponseData responseData = new ResponseData();
+    responseData.setData(e);
+    return responseData;
   }
 
-  //    @ResponseStatus(HttpStatus.BAD_REQUEST)
+//    @ResponseStatus(HttpStatus.BAD_REQUEST)
 //    @ExceptionHandler(MethodArgumentNotValidException.class)
 //    public ResponseData handleValidationExceptions(MethodArgumentNotValidException ex) {
 //        Map<String, String> errors = new HashMap<>();
