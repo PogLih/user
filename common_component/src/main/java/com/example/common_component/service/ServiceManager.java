@@ -18,7 +18,6 @@ import lombok.NoArgsConstructor;
 public class ServiceManager<T> {
 
   private BaseRequest baseRequest;
-  //  private Specification<T> specification;
   private ServiceHandler.WriteHandler<T> serviceHandler;
   private BaseValid<T> baseValid;
 
@@ -27,9 +26,6 @@ public class ServiceManager<T> {
     this.baseRequest = request;
   }
 
-//  public ServiceManager(Specification<T> specification) {
-//    this.specification = specification;
-//  }
 
   public ServiceManager(BaseValid<T> valid) {
     this.baseValid = valid;
@@ -71,7 +67,9 @@ public class ServiceManager<T> {
     T result =
         ((ServiceHandler.WriteEntityHandler<T>) serviceHandler).onChangeWriteEntityHandled(
             baseRequest);
-    return null;
+    ResponseData responseData = new ResponseData();
+    responseData.setData(result);
+    return responseData;
   }
 
   private boolean requestValidation(BaseValid<T> baseValid, RequestTypeEnum type) {

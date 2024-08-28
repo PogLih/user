@@ -1,5 +1,6 @@
 package com.example.data_component.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -7,7 +8,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
-import java.time.LocalDateTime;
+import java.sql.Timestamp;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,22 +24,25 @@ public abstract class BaseEntity {
 
   @Column(name = "created_at", columnDefinition = "TIMESTAMP", nullable = false, updatable =
       false)
-  private LocalDateTime createAt;
+  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+  private Timestamp createAt;
 
   @Column(name = "modified_at", columnDefinition = "TIMESTAMP")
-  private LocalDateTime modifiedAt;
+  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+  private Timestamp modifiedAt;
 
   @Column(name = "deleted_at", columnDefinition = "TIMESTAMP")
-  private LocalDateTime deletedAt;
+  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+  private Timestamp deletedAt;
 
   @PrePersist()
   public void handlePrePersist() {
-    this.createAt = LocalDateTime.now();
+    this.createAt = Timestamp.from(Instant.now());
   }
 
   @PreUpdate
   public void handlePreUpdate() {
-    this.modifiedAt = LocalDateTime.now();
+    this.modifiedAt = Timestamp.from(Instant.now());
   }
 
 }

@@ -73,7 +73,6 @@ public class AuthServiceImpl implements AuthService {
   public ResponseData signup(SignUpRequest signUpRequest) throws Exception {
     return ServiceManager
         .<User>builder().baseRequest(signUpRequest)
-//        .specification(userSpecification.getByName(signUpRequest))
         .baseValid(userValid)
         .serviceHandler((WriteEntityHandler<User>) request -> {
           Role role =
