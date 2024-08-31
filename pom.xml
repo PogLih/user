@@ -12,5 +12,6 @@
     <module>common_component</module>
     <module>data_component</module>
     <module>user</module>
+    <module>profile-service</module>
   </modules>
 </project>

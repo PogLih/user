@@ -11,6 +11,22 @@ services:
       - "3300:3306"
     volumes:
       - mysql-data:/var/lib/mysql
-
+  neo4j-db:
+    image: neo4j:latest
+    container_name: neo4j-container
+    environment:
+      NEO4J_AUTH: "neo4j/12345678"
+    ports:
+      - "7474:7474"  # HTTP access
+      - "7687:7687"  # Bolt protocol
+    volumes:
+      - neo4j-data:/data
+      - neo4j-logs:/logs
+      - neo4j-import:/var/lib/neo4j/import
+      - neo4j-plugins:/plugins
 volumes:
   mysql-data:
+  neo4j-data:
+  neo4j-logs:
+  neo4j-import:
+  neo4j-plugins:

@@ -1,8 +1,8 @@
 package com.example.user.service.impl;
 
+import com.example.common_component.dto.response.UserResponse;
 import com.example.common_component.request.LoginRequest;
 import com.example.common_component.request.SignUpRequest;
-import com.example.common_component.response.ResponseData;
 import com.example.common_component.response.dto.LoginResponse;
 import com.example.common_component.service.ServiceHandler.WriteEntityHandler;
 import com.example.common_component.service.ServiceManager;
@@ -12,7 +12,7 @@ import com.example.data_component.repository.RoleRepository;
 import com.example.data_component.repository.UserRepository;
 import com.example.data_component.specification.RoleSpecification;
 import com.example.data_component.specification.UserSpecification;
-import com.example.user.application.validation.impl.UserValid;
+import com.example.user.application.validation.UserValid;
 import com.example.user.entity.Account;
 import com.example.user.service.AuthService;
 import com.example.user.service.JWTService;
@@ -32,7 +32,7 @@ import org.springframework.util.CollectionUtils;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-  private ServiceManager<User> serviceManager;
+  private ServiceManager serviceManager;
   private final UserRepository userRepository;
   private final UserSpecification userSpecification;
   private final UserValid userValid;
@@ -44,7 +44,8 @@ public class AuthServiceImpl implements AuthService {
 
   public Authentication authenticate(HttpServletRequest request) {
     LoginRequest loginRequest = (LoginRequest) request;
-    User user = userRepository.findOne(userSpecification.getByName(loginRequest)).orElse(null);
+    User user = userRepository.findOne(userSpecification.getByName(loginRequest.getUsername()))
+        .orElse(null);
     Account account = modelMapper.map(user, Account.class);
     String jwt = jwtService.generateToken(account);
     String refreshToken = jwtService.generateRefreshToken(new HashMap<>(), user);
@@ -53,26 +54,10 @@ public class AuthServiceImpl implements AuthService {
     return new UsernamePasswordAuthenticationToken(account, "N/A", account.getAuthorities());
   }
 
-//    public BaseResponse login(LoginRequest loginRequest) throws Exception {
-//        return serviceManager
-//                .setRequest(loginRequest)
-//                .setRepo(userRepository)
-//                .setSpec(userSpecification.getByName(loginRequest))
-//                .setValid(userValid)
-//                .setServiceHandle(new ServiceManager.ServiceHandler<User, LoginResponse>() {
-//                                      @Override
-//                                      public LoginResponse handleService(User user) {
-//                                          return LoginResponse.builder().jwt("test")
-//                                          .refreshToken("test").build();
-//                                      }
-//                                  }
-//                ).execute();
-//    }
-
   @Override
-  public ResponseData signup(SignUpRequest signUpRequest) throws Exception {
+  public UserResponse signup(SignUpRequest signUpRequest) throws Exception {
     return ServiceManager
-        .<User>builder().baseRequest(signUpRequest)
+        .<User, UserResponse>builder().baseRequest(signUpRequest)
         .baseValid(userValid)
         .serviceHandler((WriteEntityHandler<User>) request -> {
           Role role =

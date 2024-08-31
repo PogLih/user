@@ -1,8 +1,9 @@
 package com.example.user.controller;
 
 
+import com.example.common_component.dto.ApiResponse;
+import com.example.common_component.dto.response.UserResponse;
 import com.example.common_component.request.SignUpRequest;
-import com.example.common_component.response.ResponseData;
 import com.example.user.service.AuthService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -26,15 +27,12 @@ public class AuthAPI {
   }
 
   @PostMapping(value = {"/sign-up"})
-  public ResponseData handleSignUpRequest(@RequestBody SignUpRequest signUpRequest)
+  public ApiResponse<UserResponse> handleSignUpRequest(@RequestBody SignUpRequest signUpRequest)
       throws Exception {
     log.info("Received sign-up request");
-    return authService.signup(signUpRequest);
+    return ApiResponse.<UserResponse>builder()
+        .result(authService.signup(signUpRequest))
+        .build();
   }
 
-//  @GetMapping("/**")
-//  public String catchAll() {
-//    log.info("Catch-all endpoint hit");
-//    return "Catch-all response";
-//  }
 }

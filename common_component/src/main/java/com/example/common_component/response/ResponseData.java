@@ -1,5 +1,7 @@
 package com.example.common_component.response;
 
+import com.example.common_component.dto.BaseResponse;
+
 public class ResponseData extends BaseResponse {
 
   private Object data;

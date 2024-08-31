@@ -2,7 +2,6 @@ package com.example.common_component.service;
 
 import com.example.common_component.anotations.RequestValidation;
 import com.example.common_component.enums.RequestTypeEnum;
-import com.example.common_component.exception.ApplicationException;
 import com.example.common_component.request.BaseRequest;
 import com.example.common_component.response.ResponseData;
 import com.example.common_component.validation.BaseValid;
@@ -10,17 +9,19 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.modelmapper.ModelMapper;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ServiceManager<T> {
+public class ServiceManager<T, R> {
 
+  private ModelMapper modelMapper;
   private BaseRequest baseRequest;
   private ServiceHandler.WriteHandler<T> serviceHandler;
   private BaseValid<T> baseValid;
-
+  private Class<R> responseType;
 
   public ServiceManager(BaseRequest request) {
     this.baseRequest = request;
@@ -35,9 +36,9 @@ public class ServiceManager<T> {
     this.serviceHandler = serviceHandler;
   }
 
-  public ResponseData execute() throws Exception {
+  public R execute() throws Exception {
     if (baseRequest == null) {
-      throw new ApplicationException();
+      throw new Exception();
     }
     if (baseValid == null) {
       throw new Exception();
@@ -49,26 +50,10 @@ public class ServiceManager<T> {
       requestType = annotation.value();
       boolean result = requestValidation(baseValid, requestType);
     }
-
-//        if(requestType.equals(RequestTypeEnum.GET) || requestType.equals(RequestTypeEnum.CHECK)
-//         || requestType.equals(RequestTypeEnum.GET_LIST)){
-//            if(requestType.equals(RequestTypeEnum.GET_LIST)){
-//                List all = jpaRepository.findAll(specification);
-//            }else{
-//                Optional one = jpaRepository.findOne(specification);
-//            }
-//        }else{
-//            Object result = serviceHandler.handleService();
-//            if (jpaRepository == null) {
-//                throw new Exception();
-//            }
-//            this.jpaRepository.saveAndFlush(result);
-//        }
     T result =
         ((ServiceHandler.WriteEntityHandler<T>) serviceHandler).onChangeWriteEntityHandled(
             baseRequest);
-    ResponseData responseData = new ResponseData();
-    responseData.setData(result);
+    R responseData = modelMapper.map(result, responseType);
     return responseData;
   }
 
@@ -94,7 +79,6 @@ public class ServiceManager<T> {
       } else if (type == RequestTypeEnum.Other) {
         errorMessage = baseValid.otherValidation(baseRequest);
       }
-
       return true;
     } else {
       return false;

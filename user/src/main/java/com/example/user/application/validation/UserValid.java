@@ -1,4 +1,4 @@
-package com.example.user.application.validation.impl;
+package com.example.user.application.validation;
 
 import com.example.common_component.request.BaseRequest;
 import com.example.common_component.response.ResponseData;

@@ -1,9 +1,5 @@
-# MySQL DataSource Configuration
 spring:
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
-
+  # MySQL DataSource Configuration
   datasource:
     url: jdbc:mysql://localhost:3300/dummy
     username: root
@@ -14,17 +10,26 @@ spring:
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     properties:
       hibernate:
         format_sql: true
+    #        dialect: org.hibernate.dialect.MySQLDialect Default setting
     open-in-view: false
+  # Profile configuration
   profiles:
     active: dev
+  # Turn off Spring security
+  #  autoconfigure:
+  #    exclude:
+  #      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+
   # Jwt Configuration
 #  security:
 #    generate:
 #      jwt:
 #        is-issuer
-#server:
-#  port: 8080
+server:
+  port: 8080
+  servlet:
+    context-path: /user
