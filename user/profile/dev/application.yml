@@ -16,20 +16,61 @@ spring:
         format_sql: true
     #        dialect: org.hibernate.dialect.MySQLDialect Default setting
     open-in-view: false
+
   # Profile configuration
   profiles:
     active: dev
+
   # Turn off Spring security
   #  autoconfigure:
   #    exclude:
   #      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 
   # Jwt Configuration
-#  security:
-#    generate:
-#      jwt:
-#        is-issuer
+
+  # Security configuration
+security:
+  session:
+    policy: stateless
+
+  csrf:
+    enabled: false
+    ignore-list:
+    protect-list:
+    with-http: false
+
+  cors:
+    enabled: false
+    allow-credentials: false
+    allowed-headers:
+    allowed-methods:
+    allowed-origin-patterns:
+    exposed-header:
+    max-age:
+
+  authentication:
+    by-pass-auth: false
+    public-paths:
+      - url: "/user/sign-up"
+        methods:
+          - POST
+      - url: "/auth/sign-in"
+        methods:
+          - POST
+      - url: "/auth/verify-token"
+        methods:
+          - POST
+    private-paths:
+      - url: "/user/getUsers"
+        methods:
+          - GET
+        authority: "ADMIN"
+        permissions: "all"
+
+jwt:
+  signKey: QIw18oRFGaLe1LeX03f6VZorB5gcDG0gxjSiZLxR/LFhyrcQCC4WcHhRoAzSuLq7
+
 server:
   port: 8080
   servlet:
-    context-path: /user
+    context-path: /users

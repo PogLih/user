@@ -1,9 +1,8 @@
 package com.example.common_component.service;
 
 import com.example.common_component.anotations.RequestValidation;
+import com.example.common_component.dto.request.BaseRequest;
 import com.example.common_component.enums.RequestTypeEnum;
-import com.example.common_component.request.BaseRequest;
-import com.example.common_component.response.ResponseData;
 import com.example.common_component.validation.BaseValid;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -48,7 +47,7 @@ public class ServiceManager<T, R> {
     if (clazz.isAnnotationPresent(RequestValidation.class)) {
       RequestValidation annotation = clazz.getAnnotation(RequestValidation.class);
       requestType = annotation.value();
-      boolean result = requestValidation(baseValid, requestType);
+//      boolean result = requestValidation(baseValid, requestType);
     }
     T result =
         ((ServiceHandler.WriteEntityHandler<T>) serviceHandler).onChangeWriteEntityHandled(
@@ -57,31 +56,31 @@ public class ServiceManager<T, R> {
     return responseData;
   }
 
-  private boolean requestValidation(BaseValid<T> baseValid, RequestTypeEnum type) {
-    if (type != null && baseValid != null) {
-      ResponseData errorMessage = null;
-      if (type == RequestTypeEnum.Insert) {
-        errorMessage = baseValid.validInsert(baseRequest);
-      } else if (type == RequestTypeEnum.InsertTemp) {
-        errorMessage = baseValid.insertTempValidation(baseRequest);
-      } else if (type == RequestTypeEnum.Update) {
-        errorMessage = baseValid.validUpdate(baseRequest);
-      } else if (type == RequestTypeEnum.UpdateTemp) {
-        errorMessage = baseValid.updateTempValidation(baseRequest);
-      } else if (type == RequestTypeEnum.Disable) {
-        errorMessage = baseValid.validDisable(baseRequest);
-      } else if (type == RequestTypeEnum.Delete) {
-        errorMessage = baseValid.validDelete(baseRequest);
-      } else if (type == RequestTypeEnum.Select) {
-        errorMessage = baseValid.selectValidation(baseRequest);
-      } else if (type == RequestTypeEnum.SelectList) {
-        errorMessage = baseValid.selectListValidation(baseRequest);
-      } else if (type == RequestTypeEnum.Other) {
-        errorMessage = baseValid.otherValidation(baseRequest);
-      }
-      return true;
-    } else {
-      return false;
-    }
-  }
+//  private boolean requestValidation(BaseValid<T> baseValid, RequestTypeEnum type) {
+//    if (type != null && baseValid != null) {
+//      ResponseData errorMessage = null;
+//      if (type == RequestTypeEnum.Insert) {
+//        errorMessage = baseValid.validInsert(baseRequest);
+//      } else if (type == RequestTypeEnum.InsertTemp) {
+//        errorMessage = baseValid.insertTempValidation(baseRequest);
+//      } else if (type == RequestTypeEnum.Update) {
+//        errorMessage = baseValid.validUpdate(baseRequest);
+//      } else if (type == RequestTypeEnum.UpdateTemp) {
+//        errorMessage = baseValid.updateTempValidation(baseRequest);
+//      } else if (type == RequestTypeEnum.Disable) {
+//        errorMessage = baseValid.validDisable(baseRequest);
+//      } else if (type == RequestTypeEnum.Delete) {
+//        errorMessage = baseValid.validDelete(baseRequest);
+//      } else if (type == RequestTypeEnum.Select) {
+//        errorMessage = baseValid.selectValidation(baseRequest);
+//      } else if (type == RequestTypeEnum.SelectList) {
+//        errorMessage = baseValid.selectListValidation(baseRequest);
+//      } else if (type == RequestTypeEnum.Other) {
+//        errorMessage = baseValid.otherValidation(baseRequest);
+//      }
+//      return true;
+//    } else {
+//      return false;
+//    }
+//  }
 }

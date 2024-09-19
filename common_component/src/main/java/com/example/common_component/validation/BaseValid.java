@@ -1,55 +1,54 @@
 package com.example.common_component.validation;
 
-import com.example.common_component.request.BaseRequest;
-import com.example.common_component.response.ResponseData;
+import com.example.common_component.dto.request.BaseRequest;
 
 public interface BaseValid<T> {
 
-  ResponseData validInsert(BaseRequest request);
+  boolean validInsert(BaseRequest request);
 
-  ResponseData validUpdate(BaseRequest request);
+  boolean validUpdate(BaseRequest request);
 
-  ResponseData validDelete(BaseRequest request);
+  boolean validDelete(BaseRequest request);
 
-  ResponseData validGet(BaseRequest request);
+  boolean validGet(BaseRequest request);
 
-  ResponseData validCheck(BaseRequest request);
+  boolean validCheck(BaseRequest request);
 
-  ResponseData validDisable(BaseRequest request);
+  boolean validDisable(BaseRequest request);
 
-  default ResponseData insertTempValidation(BaseRequest baseRequest) {
-    return null;//SuccessResponse.builder().build();
+  default boolean insertTempValidation(BaseRequest baseRequest) {
+    return true;//SuccessResponse.builder().build();
   }
 
-  default ResponseData updateTempValidation(BaseRequest baseRequest) {
-    return null;//SuccessResponse.builder().build();
+  default boolean updateTempValidation(BaseRequest baseRequest) {
+    return true;//SuccessResponse.builder().build();
   }
 
-  default ResponseData selectValidation(BaseRequest baseRequest) {
-    return null;//SuccessResponse.builder().build();
+  default boolean selectValidation(BaseRequest baseRequest) {
+    return true;//SuccessResponse.builder().build();
   }
 
-  default ResponseData selectListValidation(BaseRequest baseRequest) {
-    return null;//SuccessResponse.builder().build();
+  default boolean selectListValidation(BaseRequest baseRequest) {
+    return true;//SuccessResponse.builder().build();
   }
 
-  default ResponseData otherValidation(BaseRequest baseRequest) {
-    return null;//SuccessResponse.builder().build();
+  default boolean otherValidation(BaseRequest baseRequest) {
+    return true;//SuccessResponse.builder().build();
   }
 
-  default <T> ResponseData entityInsertValidation(T data) {
-    return null;//SuccessResponse.builder().build();
+  default <T> boolean entityInsertValidation(T data) {
+    return true;//SuccessResponse.builder().build();
   }
 
-  default <T> ResponseData entityUpdateValidation(T data) {
-    return null;//SuccessResponse.builder().build();
+  default <T> boolean entityUpdateValidation(T data) {
+    return true;//SuccessResponse.builder().build();
   }
 
-  default <T> ResponseData entityDisableValidation(T data) {
-    return null;//SuccessResponse.builder().build();
+  default <T> boolean entityDisableValidation(T data) {
+    return true;//SuccessResponse.builder().build();
   }
 
-  default <T> ResponseData entityDeleteValidation(T data) {
-    return null;//SuccessResponse.builder().build();
+  default <T> boolean entityDeleteValidation(T data) {
+    return true;//SuccessResponse.builder().build();
   }
 }

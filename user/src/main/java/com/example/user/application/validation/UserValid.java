@@ -1,7 +1,6 @@
 package com.example.user.application.validation;
 
-import com.example.common_component.request.BaseRequest;
-import com.example.common_component.response.ResponseData;
+import com.example.common_component.dto.request.BaseRequest;
 import com.example.common_component.validation.BaseValid;
 import com.example.data_component.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -12,32 +11,32 @@ import org.springframework.stereotype.Component;
 public class UserValid implements BaseValid<User> {
 
   @Override
-  public ResponseData validInsert(BaseRequest request) {
-    return null;
+  public boolean validInsert(BaseRequest request) {
+    return false;
   }
 
   @Override
-  public ResponseData validUpdate(BaseRequest request) {
-    return null;
+  public boolean validUpdate(BaseRequest request) {
+    return false;
   }
 
   @Override
-  public ResponseData validDelete(BaseRequest request) {
-    return null;
+  public boolean validDelete(BaseRequest request) {
+    return false;
   }
 
   @Override
-  public ResponseData validGet(BaseRequest request) {
-    return null;
+  public boolean validGet(BaseRequest request) {
+    return false;
   }
 
   @Override
-  public ResponseData validCheck(BaseRequest request) {
-    return null;
+  public boolean validCheck(BaseRequest request) {
+    return false;
   }
 
   @Override
-  public ResponseData validDisable(BaseRequest request) {
-    return null;
+  public boolean validDisable(BaseRequest request) {
+    return false;
   }
 }

@@ -8,6 +8,7 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.AllArgsConstructor;
@@ -28,7 +29,9 @@ public class User extends BaseEntity {
   private String username;
   private String password;
   private String email;
-
+  private String firstName;
+  private String lastName;
+  private LocalDate dob;
   @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   @JoinTable(
       name = "user_role",

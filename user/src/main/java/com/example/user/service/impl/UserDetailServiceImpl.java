@@ -1,14 +1,18 @@
 package com.example.user.service.impl;
 
+import static com.example.common_component.constant.UserConstant.USER_ROLE;
+
 import com.example.common_component.dto.request.UserCreationRequest;
 import com.example.common_component.dto.request.UserUpdateRequest;
 import com.example.common_component.dto.response.UserResponse;
+import com.example.common_component.service.ServiceManagerFactory;
 import com.example.data_component.entity.Role;
 import com.example.data_component.entity.User;
 import com.example.data_component.repository.RoleRepository;
 import com.example.data_component.repository.UserRepository;
 import com.example.data_component.specification.RoleSpecification;
 import com.example.data_component.specification.UserSpecification;
+import com.example.user.application.validation.UserValid;
 import com.example.user.exception.ApplicationException;
 import com.example.user.exception.ErrorCode;
 import com.example.user.service.UserService;
@@ -41,6 +45,8 @@ public class UserDetailServiceImpl implements UserService {
   private final RoleSpecification roleSpecification;
   private final ModelMapper modelMapper;
   private final PasswordEncoder passwordEncoder;
+  private final ServiceManagerFactory serviceManagerFactory;
+  private final UserValid userValid;
 
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -57,18 +63,20 @@ public class UserDetailServiceImpl implements UserService {
         authorities);
   }
 
-  public UserResponse createUser(UserCreationRequest request) {
+  @Override
+  public UserResponse signUp(UserCreationRequest request) {
     User user = modelMapper.map(request, User.class);
     user.setPassword(passwordEncoder.encode(request.getPassword()));
 
     HashSet<Role> roles = new HashSet<>();
-    roleRepository.findOne(roleSpecification.getByName("user")).ifPresent(roles::add);
-    ;
-
+    Role role = roleRepository.findOne(roleSpecification.getByName(USER_ROLE)).orElseGet(() -> {
+      return Role.builder().name(USER_ROLE).build();
+    });
+    roles.add(role);
     user.setRoles(roles);
 
     try {
-      user = userRepository.save(user);
+      user = userRepository.saveAndFlush(user);
     } catch (DataIntegrityViolationException exception) {
       throw new ApplicationException(ErrorCode.USER_EXISTED);
     }
@@ -76,6 +84,7 @@ public class UserDetailServiceImpl implements UserService {
     return modelMapper.map(user, UserResponse.class);
   }
 
+  @Override
   public UserResponse getMyInfo() {
     var context = SecurityContextHolder.getContext();
     String name = context.getAuthentication().getName();
@@ -87,6 +96,7 @@ public class UserDetailServiceImpl implements UserService {
   }
 
   @PostAuthorize("returnObject.username == authentication.name")
+  @Override
   public UserResponse updateUser(String userId, UserUpdateRequest request) {
     User user = userRepository.findOne(userSpecification.getByName(userId))
         .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_EXISTED));
@@ -101,11 +111,13 @@ public class UserDetailServiceImpl implements UserService {
   }
 
   @PreAuthorize("hasRole('ADMIN')")
+  @Override
   public void deleteUser(String userId) {
     userRepository.delete(userSpecification.getByName(userId));
   }
 
-  @PreAuthorize("hasRole('ADMIN')")
+  //  @PreAuthorize("hasRole('ADMIN')")
+  @Override
   public List<UserResponse> getUsers() {
     log.info("In method get Users");
     return userRepository.findAll().stream().map(user -> modelMapper.map(user, UserResponse.class))
@@ -113,6 +125,7 @@ public class UserDetailServiceImpl implements UserService {
   }
 
   @PreAuthorize("hasRole('ADMIN')")
+  @Override
   public UserResponse getUser(String id) {
     return modelMapper.map(
         userRepository.findOne(userSpecification.getByName(id))

@@ -1,7 +1,7 @@
 package com.example.user.application.config;
 
+import com.example.common_component.dto.ApiResponse;
 import com.example.common_component.enums.ErrorCodeEnum;
-import com.example.common_component.response.ResponseData;
 import com.example.common_component.validation.ErrorObject;
 import com.example.user.application.config.properties.AuthenticationProperties;
 import com.example.user.application.config.properties.CORSProperties;
@@ -11,10 +11,14 @@ import com.example.user.application.filter.JwtRequestAuthenticateFilter;
 import com.example.user.service.impl.UserDetailServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -22,13 +26,24 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -50,24 +65,40 @@ public class SecurityConfig {
   private final UserDetailServiceImpl userDetailService;
   private final JwtRequestAuthenticateFilter filter;
   private final PasswordEncoder passwordEncoder;
+  @Value("${jwt.signKey}")
+  private String SIGN_KEY;
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//    setSessionManager(http);
-//    setCSRF(http);
-//    setCORS(http);
-//    applyAuthenticationConfig(http);
-//    applyExceptionHandler(http);
-//
+    setSessionManager(http);
+    setCSRF(http);
+    setCORS(http);
+    applyAuthenticationConfig(http);
+    applyExceptionHandler(http);
 //    http.authenticationProvider(authenticationProvider())
 //        .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class)
 //        .userDetailsService(userDetailService);
-//
-    http
-        .authorizeHttpRequests(authorizeRequests -> authorizeRequests.anyRequest().permitAll())
-        .csrf(
-            AbstractHttpConfigurer::disable);
+    http.oauth2ResourceServer(config -> {
+      config.jwt(jwtConfigurer -> jwtConfigurer.decoder(jwtDecoder())
+          .jwtAuthenticationConverter(jwtAuthenticationConverter()));
+    });
     return http.build();
+  }
+
+  @Bean
+  public JwtAuthenticationConverter jwtAuthenticationConverter() {
+    JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
+    jwtGrantedAuthoritiesConverter.setAuthorityPrefix("");
+    jwtGrantedAuthoritiesConverter.setAuthoritiesClaimName("scope");
+    JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+    jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter);
+    return jwtAuthenticationConverter;
+  }
+
+  @Bean
+  public JwtDecoder jwtDecoder() {
+    SecretKey secretKey = new SecretKeySpec(SIGN_KEY.getBytes(), "HS512");
+    return NimbusJwtDecoder.withSecretKey(secretKey).macAlgorithm(MacAlgorithm.HS512).build();
   }
 
   @Bean
@@ -76,6 +107,11 @@ public class SecurityConfig {
     daoAuthenticationProvider.setUserDetailsService(userDetailService);
     daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
     return daoAuthenticationProvider;
+  }
+
+  @Bean
+  public static PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
   }
 
   private void setSessionManager(HttpSecurity http) throws Exception {
@@ -123,20 +159,17 @@ public class SecurityConfig {
         ? corsProperties.getAllowedOriginPatterns()
         : List.of("*"));//ex:"http://example.com" or "http://exa*.com"
     configuration.setAllowedMethods(
-        corsProperties.getAllowedMethods().isEmpty()
-            ? Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")
-            : corsProperties.getAllowedMethods());
+        corsProperties.getAllowedMethods().isEmpty() ? Arrays.asList("GET", "POST", "PUT", "DELETE",
+            "OPTIONS") : corsProperties.getAllowedMethods());
     configuration.setAllowedHeaders(
-        corsProperties.getAllowedHeaders().isEmpty()
-            ? Arrays.asList("Content-Type", "Authorization")
-            : corsProperties.getAllowedHeaders());
+        corsProperties.getAllowedHeaders().isEmpty() ? Arrays.asList("Content-Type",
+            "Authorization") : corsProperties.getAllowedHeaders());
     configuration.setExposedHeaders(
-        corsProperties.getExposedHeader().isEmpty()
-            ? List.of("X-Custom-Header")
+        corsProperties.getExposedHeader().isEmpty() ? List.of("X-Custom-Header")
             : corsProperties.getExposedHeader());
     configuration.setAllowCredentials(corsProperties.isAllowCredentials());
-    configuration.setMaxAge(corsProperties.getMaxAge() != null
-        ? corsProperties.getMaxAge() : 3600L);
+    configuration.setMaxAge(
+        corsProperties.getMaxAge() != null ? corsProperties.getMaxAge() : 3600L);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", configuration);
@@ -153,14 +186,51 @@ public class SecurityConfig {
     http.authorizeHttpRequests(config -> {
       if (!authenticationProperties.getPublicPaths().isEmpty()) {
         authenticationProperties.getPublicPaths().forEach(publicPath -> {
-          publicPath.getMethods().forEach(method ->
-              config.requestMatchers(method, publicPath.getUrl()).permitAll());
+          publicPath.getMethods()
+              .forEach(method -> config.requestMatchers(method, publicPath.getUrl()).permitAll());
         });
       } else {
         config.requestMatchers("/**").permitAll();
       }
+      if (!authenticationProperties.getPrivatePaths().isEmpty()) {
+        authenticationProperties.getPrivatePaths().forEach(privatePath -> {
+          privatePath.getMethods().forEach(method -> {
+            if (StringUtils.hasLength(privatePath.getAuthority()) &&
+                !StringUtils.hasLength(privatePath.getPermissions())) {
+              config.requestMatchers(method, privatePath.getUrl())
+                  .hasRole(privatePath.getAuthority());
+            } else if (!StringUtils.hasLength(privatePath.getAuthority()) &&
+                StringUtils.hasLength(privatePath.getPermissions())) {
+              config.requestMatchers(method, privatePath.getUrl())
+                  .hasAuthority(privatePath.getPermissions());
+            }
+            if (StringUtils.hasLength(privatePath.getAuthority()) &&
+                StringUtils.hasLength(privatePath.getPermissions())) {
+              config.requestMatchers(method, privatePath.getUrl())
+                  .access(hasRoleAndAuthority(privatePath.getAuthority(),
+                      privatePath.getPermissions()));
+
+            }
+          });
+        });
+      }
       config.anyRequest().authenticated();
     });
+  }
+
+  private AuthorizationManager<RequestAuthorizationContext> hasRoleAndAuthority(String role,
+      String permission) {
+    return (authentication, context) -> {
+      if (authentication.get().getAuthorities().isEmpty()) {
+        return new AuthorizationDecision(false);
+      }
+
+      Collection<? extends GrantedAuthority> authorities = authentication.get().getAuthorities();
+      boolean hasRole = authorities.contains(new SimpleGrantedAuthority("ROLE_" + role));
+      boolean hasPermission = authorities.contains(new SimpleGrantedAuthority(permission));
+
+      return new AuthorizationDecision(hasRole && hasPermission);
+    };
   }
 
   private void applyExceptionHandler(HttpSecurity http) throws Exception {
@@ -172,10 +242,9 @@ public class SecurityConfig {
 
   private AuthenticationEntryPoint buildAuthenticationEntryPoint() {
     return (request, response, authException) -> {
-      ResponseData responseData = new ResponseData();
-      responseData.setData(
+      ApiResponse responseData = ApiResponse.builder().result(
           ErrorObject.builder().message("You need to login first in order to perform this action.")
-              .code(ErrorCodeEnum.NEED_AUTHENTICATE).build());
+              .code(ErrorCodeEnum.NEED_AUTHENTICATE).build()).build();
       ResponseEntity<?> build = ResponseEntity.of(Optional.of(responseData));
 
       response.setContentType(MediaType.APPLICATION_JSON_VALUE);
@@ -186,11 +255,9 @@ public class SecurityConfig {
 
   private AccessDeniedHandler buildAccessDeniedHandler() {
     return (request, response, accessDeniedException) -> {
-      ResponseData responseData = new ResponseData();
-      responseData.setData(
-          ErrorObject.builder().message("You don't have " +
-                  "required role to perform this action.")
-              .code(ErrorCodeEnum.NOT_HAVE_PERMISSION).build());
+      ApiResponse responseData = ApiResponse.builder().result(
+          ErrorObject.builder().message("You don't have " + "required role to perform this action.")
+              .code(ErrorCodeEnum.NOT_HAVE_PERMISSION).build()).build();
       ResponseEntity<?> build = ResponseEntity.of(Optional.of(responseData));
 
       response.setContentType(MediaType.APPLICATION_JSON_VALUE);

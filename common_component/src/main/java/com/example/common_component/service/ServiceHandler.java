@@ -1,6 +1,6 @@
 package com.example.common_component.service;
 
-import com.example.common_component.request.BaseRequest;
+import com.example.common_component.dto.request.BaseRequest;
 
 public class ServiceHandler {
 

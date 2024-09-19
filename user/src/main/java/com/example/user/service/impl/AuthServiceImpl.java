@@ -1,28 +1,39 @@
 package com.example.user.service.impl;
 
-import com.example.common_component.dto.response.UserResponse;
-import com.example.common_component.request.LoginRequest;
-import com.example.common_component.request.SignUpRequest;
-import com.example.common_component.response.dto.LoginResponse;
-import com.example.common_component.service.ServiceHandler.WriteEntityHandler;
-import com.example.common_component.service.ServiceManager;
-import com.example.data_component.entity.Role;
+import com.example.common_component.dto.request.AuthenticationRequest;
+import com.example.common_component.dto.request.IntrospectRequest;
+import com.example.common_component.dto.request.LogoutRequest;
+import com.example.common_component.dto.request.RefreshRequest;
+import com.example.common_component.dto.response.AuthenticationResponse;
+import com.example.common_component.dto.response.IntrospectResponse;
 import com.example.data_component.entity.User;
 import com.example.data_component.repository.RoleRepository;
 import com.example.data_component.repository.UserRepository;
 import com.example.data_component.specification.RoleSpecification;
 import com.example.data_component.specification.UserSpecification;
-import com.example.user.application.validation.UserValid;
-import com.example.user.entity.Account;
+import com.example.user.exception.ApplicationException;
+import com.example.user.exception.ErrorCode;
 import com.example.user.service.AuthService;
-import com.example.user.service.JWTService;
-import jakarta.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.Set;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.JWSObject;
+import com.nimbusds.jose.JWSVerifier;
+import com.nimbusds.jose.Payload;
+import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jose.crypto.MACVerifier;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
+import java.text.ParseException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
+import java.util.StringJoiner;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.NonFinal;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -30,50 +41,85 @@ import org.springframework.util.CollectionUtils;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthServiceImpl implements AuthService {
 
-  private ServiceManager serviceManager;
+
   private final UserRepository userRepository;
   private final UserSpecification userSpecification;
-  private final UserValid userValid;
   private final RoleRepository roleRepository;
   private final RoleSpecification roleSpecification;
   private final PasswordEncoder passwordEncoder;
-  private final JWTService jwtService;
   private final ModelMapper modelMapper;
+  @NonFinal
+  @Value("${jwt.signKey}")
+  private String SIGN_KEY;
 
-  public Authentication authenticate(HttpServletRequest request) {
-    LoginRequest loginRequest = (LoginRequest) request;
-    User user = userRepository.findOne(userSpecification.getByName(loginRequest.getUsername()))
-        .orElse(null);
-    Account account = modelMapper.map(user, Account.class);
-    String jwt = jwtService.generateToken(account);
-    String refreshToken = jwtService.generateRefreshToken(new HashMap<>(), user);
-    LoginResponse loginResponse =
-        LoginResponse.builder().jwt(jwt).refreshToken(refreshToken).build();
-    return new UsernamePasswordAuthenticationToken(account, "N/A", account.getAuthorities());
+
+  @Override
+  public AuthenticationResponse signIn(AuthenticationRequest request) throws Exception {
+    User user = userRepository.findOne(userSpecification.getByName(request.getUsername()))
+        .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_EXISTED));
+    boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
+    if (!authenticated) {
+      throw new ApplicationException(ErrorCode.UNAUTHENTICATED);
+    }
+    String token = generateToken(user);
+    return AuthenticationResponse.builder().authenticated(authenticated).token(token).build();
   }
 
   @Override
-  public UserResponse signup(SignUpRequest signUpRequest) throws Exception {
-    return ServiceManager
-        .<User, UserResponse>builder().baseRequest(signUpRequest)
-        .baseValid(userValid)
-        .serviceHandler((WriteEntityHandler<User>) request -> {
-          Role role =
-              roleRepository.findOne(roleSpecification.getByName("user"))
-                  .orElse(null);
-          if (role == null) {
-            role = Role.builder().name("user").build();
-          }
-          User user = modelMapper.map(request, User.class);
-          if (CollectionUtils.isEmpty(user.getRoles())) {
-            user.setRoles(Set.of(role));
-          } else {
-            user.getRoles().add(role);
-          }
-          userRepository.saveAndFlush(user);
-          return user;
-        }).build().execute();
+  public IntrospectResponse verify(IntrospectRequest request) throws JOSEException, ParseException {
+    String token = request.getToken();
+    JWSVerifier jwsVerifier = new MACVerifier(SIGN_KEY.getBytes());
+    SignedJWT signedJWT = SignedJWT.parse(token);
+    Date expiredTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+    boolean verified = signedJWT.verify(jwsVerifier);
+    return IntrospectResponse.builder().valid(verified && expiredTime.after(new Date())).build();
+  }
+
+  @Override
+  public void logOut(LogoutRequest request) {
+  }
+
+  @Override
+  public AuthenticationResponse refreshToken(RefreshRequest request) {
+    return null;
+  }
+
+  private String generateToken(User user) {
+    JWSHeader jwsHeader = new JWSHeader(JWSAlgorithm.HS512);
+
+    JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder().subject(user.getUsername())
+        .issuer("Users Service").issueTime(new Date())
+        .expirationTime(new Date(Instant.now().plus(1, ChronoUnit.HOURS).toEpochMilli()))
+        .claim("scope", buildScope(user))//custom claims.
+        .build();
+    Payload payload = new Payload(jwtClaimsSet.toJSONObject());
+    JWSObject jwsObject = new JWSObject(jwsHeader, payload);
+
+    try {
+      jwsObject.sign(new MACSigner(SIGN_KEY.getBytes()));
+      return jwsObject.serialize();
+    } catch (JOSEException exception) {
+      log.error("Cant not create Token");
+      throw new RuntimeException(exception);
+    }
+
+  }
+
+  private String buildScope(User user) {
+    StringJoiner stringJoiner = new StringJoiner(" ");
+
+    if (!CollectionUtils.isEmpty(user.getRoles())) {
+      user.getRoles().forEach(role -> {
+        stringJoiner.add("ROLE_" + role.getName());
+        if (!CollectionUtils.isEmpty(role.getPermissions())) {
+          role.getPermissions().forEach(permission -> stringJoiner.add(permission.getName()));
+        }
+      });
+    }
+
+    return stringJoiner.toString();
   }
 }

@@ -1,13 +1,22 @@
 package com.example.user.service;
 
-import com.example.common_component.dto.response.UserResponse;
-import com.example.common_component.request.SignUpRequest;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.security.core.Authentication;
+import com.example.common_component.dto.request.AuthenticationRequest;
+import com.example.common_component.dto.request.IntrospectRequest;
+import com.example.common_component.dto.request.LogoutRequest;
+import com.example.common_component.dto.request.RefreshRequest;
+import com.example.common_component.dto.response.AuthenticationResponse;
+import com.example.common_component.dto.response.IntrospectResponse;
+import com.nimbusds.jose.JOSEException;
+import java.text.ParseException;
 
 public interface AuthService {
 
-  Authentication authenticate(HttpServletRequest request);
 
-  UserResponse signup(SignUpRequest signUpRequest) throws Exception;
+  AuthenticationResponse signIn(AuthenticationRequest request) throws Exception;
+
+  IntrospectResponse verify(IntrospectRequest request) throws JOSEException, ParseException;
+
+  void logOut(LogoutRequest request);
+
+  AuthenticationResponse refreshToken(RefreshRequest request);
 }
