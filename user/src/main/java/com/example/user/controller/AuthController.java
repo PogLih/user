@@ -49,14 +49,14 @@ public class AuthController {
   }
 
   @PostMapping("/refresh")
-  ApiResponse<AuthenticationResponse> authenticate(@RequestBody RefreshRequest request)
+  public ApiResponse<AuthenticationResponse> authenticate(@RequestBody RefreshRequest request)
       throws ParseException, JOSEException {
     var result = authService.refreshToken(request);
     return ApiResponse.<AuthenticationResponse>builder().result(result).build();
   }
 
   @PostMapping("/logout")
-  ApiResponse<Void> logout(@RequestBody LogoutRequest request)
+  public ApiResponse<Void> logout(@RequestBody LogoutRequest request)
       throws ParseException, JOSEException {
     authService.logOut(request);
     return ApiResponse.<Void>builder().build();

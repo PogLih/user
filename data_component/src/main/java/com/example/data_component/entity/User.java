@@ -40,6 +40,7 @@ public class User extends BaseEntity {
   )
   private Set<Role> roles;
   @OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
+  @Builder.Default
   private Set<Token> token = new HashSet<>();
 
 

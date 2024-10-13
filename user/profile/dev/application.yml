@@ -26,8 +26,6 @@ spring:
   #    exclude:
   #      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 
-  # Jwt Configuration
-
   # Security configuration
 security:
   session:
@@ -67,8 +65,11 @@ security:
         authority: "ADMIN"
         permissions: "all"
 
+  # Jwt Configuration
 jwt:
-  signKey: QIw18oRFGaLe1LeX03f6VZorB5gcDG0gxjSiZLxR/LFhyrcQCC4WcHhRoAzSuLq7
+  signKey: ${SECRET_KEY}
+  issuer: Users Service
+  ttl-in-second: 3600
 
 server:
   port: 8080

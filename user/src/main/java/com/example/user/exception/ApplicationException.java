@@ -1,17 +1,14 @@
 package com.example.user.exception;
 
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class ApplicationException extends RuntimeException {
 
   private ErrorCode errorCode;
-
-  public ErrorCode getErrorCode() {
-    return errorCode;
-  }
-
-  public void setErrorCode(ErrorCode errorCode) {
-    this.errorCode = errorCode;
-  }
 
   public ApplicationException(ErrorCode errorCode) {
     super(errorCode.getMessage());

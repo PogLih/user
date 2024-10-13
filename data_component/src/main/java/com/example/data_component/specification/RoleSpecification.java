@@ -8,7 +8,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
 @Component
-public class RoleSpecification extends BaseSpecification<Role> {
+public class RoleSpecification {
 
   public Specification<Role> getByName(String name) {
     Specification<Role> spec = (root, query, criteriaBuilder) -> {

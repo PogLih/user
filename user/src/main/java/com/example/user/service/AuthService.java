@@ -12,11 +12,11 @@ import java.text.ParseException;
 public interface AuthService {
 
 
-  AuthenticationResponse signIn(AuthenticationRequest request) throws Exception;
+  public AuthenticationResponse signIn(AuthenticationRequest request) throws Exception;
 
-  IntrospectResponse verify(IntrospectRequest request) throws JOSEException, ParseException;
+  public IntrospectResponse verify(IntrospectRequest request) throws JOSEException, ParseException;
 
-  void logOut(LogoutRequest request);
+  public void logOut(LogoutRequest request);
 
-  AuthenticationResponse refreshToken(RefreshRequest request);
+  public AuthenticationResponse refreshToken(RefreshRequest request);
 }

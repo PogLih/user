@@ -23,7 +23,7 @@ public class ApplicationStart {
   private final UserSpecification userSpecification;
 
   @Bean
-  ApplicationRunner applicationRunner() {
+  public ApplicationRunner applicationRunner() {
     return args -> {
       if (!userRepository.exists(userSpecification.getByName("admin"))) {
         User admin = User.builder().username("admin").password(passwordEncoder.encode("admin"))

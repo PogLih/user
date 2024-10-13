@@ -12,7 +12,6 @@ import com.example.data_component.repository.RoleRepository;
 import com.example.data_component.repository.UserRepository;
 import com.example.data_component.specification.RoleSpecification;
 import com.example.data_component.specification.UserSpecification;
-import com.example.user.application.validation.UserValid;
 import com.example.user.exception.ApplicationException;
 import com.example.user.exception.ErrorCode;
 import com.example.user.service.UserService;
@@ -46,7 +45,6 @@ public class UserDetailServiceImpl implements UserService {
   private final ModelMapper modelMapper;
   private final PasswordEncoder passwordEncoder;
   private final ServiceManagerFactory serviceManagerFactory;
-  private final UserValid userValid;
 
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -116,7 +114,7 @@ public class UserDetailServiceImpl implements UserService {
     userRepository.delete(userSpecification.getByName(userId));
   }
 
-  //  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasRole('ADMIN')")
   @Override
   public List<UserResponse> getUsers() {
     log.info("In method get Users");

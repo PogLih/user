@@ -1,19 +1,13 @@
 package com.example.user.application.config;
 
-import com.example.common_component.dto.ApiResponse;
-import com.example.common_component.enums.ErrorCodeEnum;
-import com.example.common_component.validation.ErrorObject;
 import com.example.user.application.config.properties.AuthenticationProperties;
 import com.example.user.application.config.properties.CORSProperties;
 import com.example.user.application.config.properties.CSRFProperties;
 import com.example.user.application.config.properties.SessionProperties;
-import com.example.user.application.filter.JwtRequestAuthenticateFilter;
 import com.example.user.service.impl.UserDetailServiceImpl;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import lombok.RequiredArgsConstructor;
@@ -21,9 +15,6 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.authorization.AuthorizationDecision;
@@ -40,9 +31,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
-import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -63,7 +52,6 @@ public class SecurityConfig {
   private final CORSProperties corsProperties;
   private final AuthenticationProperties authenticationProperties;
   private final UserDetailServiceImpl userDetailService;
-  private final JwtRequestAuthenticateFilter filter;
   private final PasswordEncoder passwordEncoder;
   @Value("${jwt.signKey}")
   private String SIGN_KEY;
@@ -74,13 +62,15 @@ public class SecurityConfig {
     setCSRF(http);
     setCORS(http);
     applyAuthenticationConfig(http);
-    applyExceptionHandler(http);
+//    applyExceptionHandler(http);
 //    http.authenticationProvider(authenticationProvider())
 //        .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class)
 //        .userDetailsService(userDetailService);
     http.oauth2ResourceServer(config -> {
       config.jwt(jwtConfigurer -> jwtConfigurer.decoder(jwtDecoder())
-          .jwtAuthenticationConverter(jwtAuthenticationConverter()));
+              .jwtAuthenticationConverter(jwtAuthenticationConverter()))
+          .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
+          .accessDeniedHandler(new JwtAccessDeniedHandler());
     });
     return http.build();
   }
@@ -233,36 +223,36 @@ public class SecurityConfig {
     };
   }
 
-  private void applyExceptionHandler(HttpSecurity http) throws Exception {
-    http.exceptionHandling(config -> {
-      config.authenticationEntryPoint(buildAuthenticationEntryPoint());
-      config.accessDeniedHandler(buildAccessDeniedHandler());
-    });
-  }
-
-  private AuthenticationEntryPoint buildAuthenticationEntryPoint() {
-    return (request, response, authException) -> {
-      ApiResponse responseData = ApiResponse.builder().result(
-          ErrorObject.builder().message("You need to login first in order to perform this action.")
-              .code(ErrorCodeEnum.NEED_AUTHENTICATE).build()).build();
-      ResponseEntity<?> build = ResponseEntity.of(Optional.of(responseData));
-
-      response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-      response.setStatus(HttpStatus.UNAUTHORIZED.value());
-      response.getWriter().write(new ObjectMapper().writeValueAsString(build.getBody()));
-    };
-  }
-
-  private AccessDeniedHandler buildAccessDeniedHandler() {
-    return (request, response, accessDeniedException) -> {
-      ApiResponse responseData = ApiResponse.builder().result(
-          ErrorObject.builder().message("You don't have " + "required role to perform this action.")
-              .code(ErrorCodeEnum.NOT_HAVE_PERMISSION).build()).build();
-      ResponseEntity<?> build = ResponseEntity.of(Optional.of(responseData));
-
-      response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-      response.setStatus(HttpStatus.FORBIDDEN.value());
-      response.getWriter().write(new ObjectMapper().writeValueAsString(build.getBody()));
-    };
-  }
+//  private void applyExceptionHandler(HttpSecurity http) throws Exception {
+//    http.exceptionHandling(config -> {
+//      config.authenticationEntryPoint(buildAuthenticationEntryPoint());
+//      config.accessDeniedHandler(buildAccessDeniedHandler());
+//    });
+//  }
+//
+//  private AuthenticationEntryPoint buildAuthenticationEntryPoint() {
+//    return (request, response, authException) -> {
+//      ApiResponse responseData = ApiResponse.builder().result(
+//          ErrorObject.builder().message("You need to login first in order to perform this action.")
+//              .code(ErrorCodeEnum.NEED_AUTHENTICATE).build()).build();
+//      ResponseEntity<?> build = ResponseEntity.of(Optional.of(responseData));
+//
+//      response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+//      response.setStatus(HttpStatus.UNAUTHORIZED.value());
+//      response.getWriter().write(new ObjectMapper().writeValueAsString(build.getBody()));
+//    };
+//  }
+//
+//  private AccessDeniedHandler buildAccessDeniedHandler() {
+//    return (request, response, accessDeniedException) -> {
+//      ApiResponse responseData = ApiResponse.builder().result(
+//          ErrorObject.builder().message("You don't have " + "required role to perform this action.")
+//              .code(ErrorCodeEnum.NOT_HAVE_PERMISSION).build()).build();
+//      ResponseEntity<?> build = ResponseEntity.of(Optional.of(responseData));
+//
+//      response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+//      response.setStatus(HttpStatus.FORBIDDEN.value());
+//      response.getWriter().write(new ObjectMapper().writeValueAsString(build.getBody()));
+//    };
+//  }
 }

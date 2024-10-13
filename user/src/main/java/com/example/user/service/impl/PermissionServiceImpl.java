@@ -16,7 +16,6 @@ public class PermissionServiceImpl implements PermissionService {
 
   private final PermissionRepository permissionRepository;
   private final ModelMapper modelMapper;
-  ;
 
   public PermissionResponse create(PermissionRequest request) {
     Permission permission = modelMapper.map(request, Permission.class);

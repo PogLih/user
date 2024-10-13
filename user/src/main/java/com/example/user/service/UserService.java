@@ -8,15 +8,15 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 
 public interface UserService extends UserDetailsService {
 
-  UserResponse signUp(UserCreationRequest request) throws Exception;
+  public UserResponse signUp(UserCreationRequest request) throws Exception;
 
-  UserResponse getMyInfo();
+  public UserResponse getMyInfo();
 
-  List<UserResponse> getUsers();
+  public List<UserResponse> getUsers();
 
-  UserResponse getUser(String userId);
+  public UserResponse getUser(String userId);
 
-  void deleteUser(String userId);
+  public void deleteUser(String userId);
 
-  UserResponse updateUser(String userId, UserUpdateRequest request);
+  public UserResponse updateUser(String userId, UserUpdateRequest request);
 }
