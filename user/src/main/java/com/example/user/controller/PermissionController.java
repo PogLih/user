@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/permission")
 @RequiredArgsConstructor
 @Slf4j
 public class PermissionController {
@@ -26,7 +26,7 @@ public class PermissionController {
   @PostMapping
   public ApiResponse<PermissionResponse> create(@RequestBody PermissionRequest permissionRequest) {
     return ApiResponse.<PermissionResponse>builder()
-        .result(permissionService.create(PermissionRequest.builder().build())).build();
+        .result(permissionService.create(permissionRequest)).build();
   }
 
   @GetMapping

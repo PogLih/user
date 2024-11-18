@@ -6,6 +6,7 @@ import com.example.data_component.entity.Permission;
 import com.example.data_component.entity.Role;
 import com.example.data_component.repository.PermissionRepository;
 import com.example.data_component.repository.RoleRepository;
+import com.example.data_component.specification.PermissionSpecification;
 import com.example.user.service.RoleService;
 import java.util.HashSet;
 import java.util.List;
@@ -20,13 +21,15 @@ public class RoleServiceImpl implements RoleService {
   private final ModelMapper modelMapper;
   private final RoleRepository roleRepository;
   private final PermissionRepository permissionRepository;
+  private final PermissionSpecification permissionSpecification;
 
   public RoleResponse create(RoleRequest request) {
     Role role = modelMapper.map(request, Role.class);
 
-    List<Permission> permissions = permissionRepository.findAllById(request.getPermissions());
+    List<Permission> permissions = permissionRepository.findAll(
+        permissionSpecification.getByIds(request.getPermissions()));
+    role = roleRepository.save(role);
     role.setPermissions(new HashSet<>(permissions));
-
     role = roleRepository.save(role);
     return modelMapper.map(role, RoleResponse.class);
   }

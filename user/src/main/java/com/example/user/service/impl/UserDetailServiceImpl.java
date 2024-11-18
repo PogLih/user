@@ -99,13 +99,10 @@ public class UserDetailServiceImpl implements UserService {
     User user = userRepository.findOne(userSpecification.getByName(userId))
         .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_EXISTED));
 
-    modelMapper.map(user, request);
+    modelMapper.map(request, user);
     user.setPassword(passwordEncoder.encode(request.getPassword()));
-
-    var roles = roleRepository.findAll(roleSpecification.getByRoles(request.getRoles()));
-    user.setRoles(new HashSet<>(roles));
-
-    return modelMapper.map(userRepository.save(user), UserResponse.class);
+    UserResponse userResponse = modelMapper.map(userRepository.save(user), UserResponse.class);
+    return userResponse;
   }
 
   @PreAuthorize("hasRole('ADMIN')")

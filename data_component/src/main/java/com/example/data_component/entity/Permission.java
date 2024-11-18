@@ -2,6 +2,7 @@ package com.example.data_component.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import java.util.Set;
@@ -20,13 +21,15 @@ public class Permission extends BaseEntity {
 
   @Column(unique = true)
   private String name;
+  private String description;
 
-  @ManyToMany(mappedBy = "permissions")
+  @ManyToMany(mappedBy = "permissions", fetch = FetchType.EAGER)
   private Set<Role> roles;
 
   @Builder
-  public Permission(String name, Set<Role> roles) {
+  public Permission(String name, String description, Set<Role> roles) {
     this.name = name;
+    this.description = description;
     this.roles = roles;
   }
 }

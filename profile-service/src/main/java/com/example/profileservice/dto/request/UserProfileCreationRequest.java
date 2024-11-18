@@ -1,6 +1,7 @@
 package com.example.profileservice.dto.request;
 
 import java.time.LocalDate;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,9 +13,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UserProfileCreationRequest {
 
-  private String password;
-  private String firstName;
-  private String lastName;
-  private LocalDate dob;
-  private String city;
+    private String password;
+    private String firstName;
+    private String lastName;
+    private LocalDate dob;
+    private String city;
 }
