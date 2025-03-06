@@ -3,11 +3,8 @@ package com.example.common_component.dto.request;
 import com.example.common_component.anotations.DobConstraint;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 @Data
@@ -15,6 +12,7 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@EqualsAndHashCode(callSuper=false)
 public class UserCreationRequest extends BaseRequest {
 
   @Size(min = 4, message = "USERNAME_INVALID")

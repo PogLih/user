@@ -6,7 +6,9 @@ import com.example.common_component.dto.request.LogoutRequest;
 import com.example.common_component.dto.request.RefreshRequest;
 import com.example.common_component.dto.response.AuthenticationResponse;
 import com.example.common_component.dto.response.IntrospectResponse;
+import com.example.data_component.entity.InvalidatedToken;
 import com.example.data_component.entity.User;
+import com.example.data_component.repository.InvalidatedTokenRepository;
 import com.example.data_component.repository.RoleRepository;
 import com.example.data_component.repository.UserRepository;
 import com.example.data_component.specification.RoleSpecification;
@@ -30,6 +32,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.StringJoiner;
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -51,6 +55,7 @@ public class AuthServiceImpl implements AuthService {
   private final PasswordEncoder passwordEncoder;
   private final ModelMapper modelMapper;
   private final JwtTokenProperties jwtTokenProperties;
+  private final InvalidatedTokenRepository invalidatedTokenRepository;
 
 
   @Override
@@ -68,15 +73,17 @@ public class AuthServiceImpl implements AuthService {
   @Override
   public IntrospectResponse verify(IntrospectRequest request) throws JOSEException, ParseException {
     String token = request.getToken();
-    JWSVerifier jwsVerifier = new MACVerifier(jwtTokenProperties.getSignKey().getBytes());
-    SignedJWT signedJWT = SignedJWT.parse(token);
-    Date expiredTime = signedJWT.getJWTClaimsSet().getExpirationTime();
-    boolean verified = signedJWT.verify(jwsVerifier);
-    return IntrospectResponse.builder().valid(verified && expiredTime.after(new Date())).build();
+      verifyToken(token);
+      return IntrospectResponse.builder().valid(true).build();
   }
 
   @Override
-  public void logOut(LogoutRequest request) {
+  public void logOut(LogoutRequest request) throws ParseException, JOSEException {
+      SignedJWT signedJWT = verifyToken(request.getToken());
+      String jwt = signedJWT.getJWTClaimsSet().getJWTID();
+      Date expirationTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+      InvalidatedToken token = InvalidatedToken.builder().id(jwt).expiryTime(expirationTime).build();
+      invalidatedTokenRepository.save(token);
   }
 
   @Override
@@ -89,7 +96,9 @@ public class AuthServiceImpl implements AuthService {
 
     JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder().subject(user.getUsername())
         .issuer("Users Service").issueTime(new Date())
-        .expirationTime(new Date(Instant.now().plus(1, ChronoUnit.HOURS).toEpochMilli()))
+        .expirationTime(new Date(Instant.now().plus(1, ChronoUnit.HOURS)
+        .toEpochMilli()))
+        .jwtID(UUID.randomUUID().toString())
         .claim("scope", buildScope(user))//custom claims.
         .build();
     Payload payload = new Payload(jwtClaimsSet.toJSONObject());
@@ -118,5 +127,16 @@ public class AuthServiceImpl implements AuthService {
     }
 
     return stringJoiner.toString();
+  }
+
+  private SignedJWT verifyToken(String token) throws JOSEException, ParseException {
+    JWSVerifier jwsVerifier = new MACVerifier(jwtTokenProperties.getSignKey().getBytes());
+    SignedJWT signedJWT = SignedJWT.parse(token);
+    Date expiredTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+    boolean verified = signedJWT.verify(jwsVerifier);
+    if(!verified && expiredTime.after(new Date())) {
+      throw new ApplicationException(ErrorCode.UNAUTHENTICATED);
+    }
+    return signedJWT;
   }
 }

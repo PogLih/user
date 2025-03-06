@@ -58,6 +58,9 @@ security:
       - url: "/auth/verify-token"
         methods:
           - POST
+      - url: "auth/logout"
+        methods:
+          - POST
     private-paths:
       - url: "/user/getUsers"
         methods:

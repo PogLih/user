@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
@@ -23,6 +24,7 @@ public class AuthenticationProperties {
   }
 
   @Data
+  @EqualsAndHashCode(callSuper=false)
   public static class PrivatePath extends PublicPath {
 
     private String authority;
